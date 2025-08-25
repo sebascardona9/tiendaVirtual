@@ -1,0 +1,10 @@
+
+
+.logo {
+  height: '50px';
+  cursor: 'pointer'
+}
+.menu {
+  display: 'flex';
+  gap: '15px'
+}
