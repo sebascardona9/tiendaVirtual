@@ -52,13 +52,6 @@ const Login = () => {
               required
             />
           </div>
-
-          {/* <button
-            type="submit"
-            className="w-full py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition duration-200"
-          >
-            Ingresar
-          </button> */}
           <Button 
             type="submit"
             

@@ -7,7 +7,8 @@ import Footer from "./component/pages/footer/Footer";
 import './App.css'
 import Layout from "./component/pages/layaut/Layout";
 import Juguetedetalle from "./component/pages/juguetes/JugueteDetalle";
-
+import ToyCreate from "./component/pages/juguetes/case-uses/ToyCreate";
+import Logout from "./component/pages/logIn y LogOut/LogOut";
 
 function App() {
 
@@ -22,12 +23,13 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage/>}/>
-
               <Route path="/juguetes" element={<HomePage/>}>
                 <Route path=":slug" element={<Juguetedetalle/>} />
               </Route>
               <Route path="/Login" element={<Login/>} />
               <Route path="/Register" element={<Register/>} />
+              <Route path="/Crear" element={<ToyCreate/>} />
+              <Route path="/Logout" element={<Logout/>} />
               <Route path="*" element={<p>Not Found</p>} />
             </Routes>
           </Layout>
