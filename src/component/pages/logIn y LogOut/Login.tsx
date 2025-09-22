@@ -1,14 +1,24 @@
 import { Link } from "react-router-dom";
 import Button from "../../../IU/bottons/Botton";
 import React from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../../../component/auth/fireBaseConfing";
 const Login = () => {
   const [userMail, setUserMail] = React.useState("");
   const [userPassword, setUserPassword] = React.useState("");
 
-  const FuntionLogin = (e: React.FormEvent) => {
+  const FuntionLogin = async(e: React.FormEvent) => {
     e.preventDefault();
     //console.log(userMail);
-    alert(userMail+userPassword);
+    //alert(userMail+userPassword);
+    //verificamos el usuario en la base de datos firebase
+    
+    try {
+      const userCredentials = await signInWithEmailAndPassword(auth,userMail, userPassword);
+      alert ("Bienvenido: " + userCredentials.user);
+    } catch (error:any) {
+      alert ("Error al iniciar sesión"+error.message);
+    }
     
     
   }
