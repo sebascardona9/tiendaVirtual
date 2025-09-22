@@ -24,28 +24,34 @@ const Footer = () => (
 
       {/* Sección Suscríbete */}
       <div className="md:col-span-2">
-        <h3 className="font-semibold mb-3">SUSCRÍBETE</h3>
-        <p className="mb-4">Únete para obtener promociones, descuentos y más ❤️</p>
+        <h3 className="font-semibold mb-3">ESCRIBENOS PARA COTIZAR</h3>
         <form className="flex max-w-md">
           <input
             type="email"
             placeholder="Tu correo"
             className="flex-grow p-2 border border-gray-300 rounded-l"
           />
+          
           <button type="submit" className="bg-gray-900 text-white px-4 rounded-r">
             Unirme
           </button>
+
+          <input
+            type="text"
+            placeholder='description'
+            className="flex-grow p-2 border border-gray-300"
+          />
         </form>
-        <div className="mt-4 space-x-4">
-          {/* Aquí puedes agregar iconos reales de medios de pago */}
+        {/* <div className="mt-4 space-x-4">
+          {/* Aquí puedes agregar iconos reales de medios de pago *
           <span>AmEx</span><span>Visa</span><span>Mastercard</span>
-        </div>
+        </div> */}
       </div>
     </div>
 
     <div className="border-t border-gray-300 mt-12 pt-6">
-      <p className="text-center text-sm">© 2025 ANGELA MARIA ARISTIZABAL ACCESORIOS</p>
-      <p className="text-center text-sm mt-2">Each pair a unique masterpiece from our artisans to you</p>
+      <p className="text-center text-sm">© 2025 JUGUETERIA VARIEDADES</p>
+      <p className="text-center text-sm mt-2">Estamos ubicados en Pereira, la Pajarera</p>
     </div>
   </footer>
 );
