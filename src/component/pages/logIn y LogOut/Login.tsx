@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import Button from "../../../IU/bottons/Botton";
 import React from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../../component/auth/fireBaseConfing";
+import { auth } from "../../../firebase/firebase.config";
 const Login = () => {
   const [userMail, setUserMail] = React.useState("");
   const [userPassword, setUserPassword] = React.useState("");
@@ -10,14 +10,16 @@ const Login = () => {
   const FuntionLogin = async(e: React.FormEvent) => {
     e.preventDefault();
     //console.log(userMail);
-    //alert(userMail+userPassword);
+    //alert("El usuario: " + userMail+ " la clave es: " + userPassword);
     //verificamos el usuario en la base de datos firebase
     
     try {
       const userCredentials = await signInWithEmailAndPassword(auth,userMail, userPassword);
+      //console.log("API KEY", import.meta.env.VITE_FIREBASE_API_KEY);
       alert ("Bienvenido: " + userCredentials.user);
     } catch (error:any) {
       alert ("Error al iniciar sesión"+error.message);
+      //console.log("API KEY", import.meta.env.VITE_FIREBASE_API_KEY);
     }
     
     
