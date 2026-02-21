@@ -1,59 +1,98 @@
-// src/components/Footer.tsx
-import { Link } from 'react-router-dom';
-import { footerData } from './FooterLinks';
+import { Link } from 'react-router-dom'
+import { footerData } from './FooterLinks'
+import logoImg from '../../../assets/Images/Logo.jpeg'
 
 const Footer = () => (
-  <footer className="bg-gray-100 text-gray-700 py-12">
-    <div className="container mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 px-4">
-      
-      {/* Renderizar las secciones dinámicamente */}
-      {footerData.map((section, index) => (
-        <div key={index}>
-          <h3 className="font-semibold mb-3">{section.title}</h3>
-          <ul className="space-y-2">
-            {section.links.map((link, idx) => (
-              <li key={idx}>
-                <Link to={link.path} className="hover:text-gray-900">
-                  {link.label}
-                </Link>
-              </li>
+    <footer style={{ backgroundColor: 'var(--vsm-white)', borderTop: '1px solid var(--vsm-gray)' }} className="py-14">
+        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+            {/* Col 1: Logo + About + Social */}
+            <div>
+                <div className="flex items-center gap-2 mb-4">
+                    <img
+                        src={logoImg}
+                        alt="Velas Santa Marta"
+                        style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+                    />
+                    <div>
+                        <span style={{ fontWeight: 800, fontSize: '1rem', display: 'block', lineHeight: 1.1, color: 'var(--vsm-black)' }}>Velas</span>
+                        <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Santa Marta</span>
+                    </div>
+                </div>
+                {/* Social icons (placeholder text icons) */}
+                <div className="flex gap-3 mt-4">
+                    {[
+                        { label: 'IG',  href: '#' },
+                        { label: 'TK',  href: '#' },
+                        { label: 'FB',  href: '#' },
+                        { label: 'YT',  href: '#' },
+                    ].map((s) => (
+                        <a
+                            key={s.label}
+                            href={s.href}
+                            style={{
+                                width: '32px', height: '32px', borderRadius: '50%',
+                                backgroundColor: 'var(--vsm-brand)', color: '#fff',
+                                fontSize: '9px', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                textDecoration: 'none',
+                            }}
+                            className="hover:opacity-80 transition-opacity"
+                        >
+                            {s.label}
+                        </a>
+                    ))}
+                </div>
+            </div>
+
+            {/* Col 2: Sobre Nosotros */}
+            <div>
+                <h3 style={{ fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', color: 'var(--vsm-black)' }}>
+                    Sobre Nosotros
+                </h3>
+                <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '13px', lineHeight: 1.8 }}>
+                    Somos una pequeña empresa artesanal nacida en Santa Marta, Colombia.
+                    Elaboramos velas a mano con cera natural e ingredientes del Caribe colombiano
+                    para crear experiencias únicas en tu hogar.
+                </p>
+            </div>
+
+            {/* Col 3 & 4: Dynamic link columns */}
+            {footerData.map((section) => (
+                <div key={section.title}>
+                    <h3 style={{ fontWeight: 800, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '1rem', color: 'var(--vsm-black)' }}>
+                        {section.title}
+                    </h3>
+                    <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        {section.links.map((link) => (
+                            <li key={link.label}>
+                                <Link
+                                    to={link.path}
+                                    style={{ color: 'var(--vsm-gray-mid)', fontSize: '13px', textDecoration: 'none' }}
+                                    className="hover:text-black transition-colors"
+                                >
+                                    {link.label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             ))}
-          </ul>
         </div>
-      ))}
 
-      {/* Sección Suscríbete */}
-      <div className="md:col-span-2">
-        <h3 className="font-semibold mb-3">ESCRIBENOS PARA COTIZAR</h3>
-        <form className="flex max-w-md">
-          <input
-            type="email"
-            placeholder="Tu correo"
-            className="flex-grow p-2 border border-gray-300 rounded-l"
-          />
-          
-          <button type="submit" className="bg-gray-900 text-white px-4 rounded-r">
-            Unirme
-          </button>
+        {/* Bottom bar */}
+        <div
+            style={{ borderTop: '1px solid var(--vsm-gray)', marginTop: '3rem', paddingTop: '1.5rem' }}
+            className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-2"
+        >
+            <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '12px' }}>
+                Copyright © 2025 Velas Santa Marta
+            </p>
+            <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '12px' }}>
+                Santa Marta, Magdalena, Colombia
+            </p>
+        </div>
+    </footer>
+)
 
-          <input
-            type="text"
-            placeholder='description'
-            className="flex-grow p-2 border border-gray-300"
-          />
-        </form>
-        {/* <div className="mt-4 space-x-4">
-          {/* Aquí puedes agregar iconos reales de medios de pago *
-          <span>AmEx</span><span>Visa</span><span>Mastercard</span>
-        </div> */}
-      </div>
-    </div>
-
-    <div className="border-t border-gray-300 mt-12 pt-6">
-      <p className="text-center text-sm">© 2025 JUGUETERIA VARIEDADES</p>
-      <p className="text-center text-sm mt-2">Estamos ubicados en Pereira, la Pajarera</p>
-    </div>
-  </footer>
-);
-
-export default Footer;
+export default Footer

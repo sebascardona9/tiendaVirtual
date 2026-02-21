@@ -1,1 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700;800&display=swap');
 
+/* Velas Santa Marta – design tokens */
+:root {
+  --vsm-bg:         #F5F5F5;
+  --vsm-white:      #FFFFFF;
+  --vsm-black:      #111111;
+  --vsm-gray:       #E8E8E8;
+  --vsm-gray-mid:   #777777;
+  --vsm-brand:      #C96B2B;
+  --vsm-brand-dark: #A8561F;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background-color: var(--vsm-bg);
+  color: var(--vsm-black);
+  font-family: 'Mulish', sans-serif;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--vsm-gray); border-radius: 3px; }

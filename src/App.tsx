@@ -8,7 +8,9 @@ import './App.css'
 import Layout from "./component/pages/layaut/Layout";
 import Juguetedetalle from "./component/pages/juguetes/JugueteDetalle";
 import ToyCreate from "./component/pages/juguetes/case-uses/ToyCreate";
-import Logout from "./component/pages/logIn y LogOut/LogOut";
+import AdminPanel from "./component/pages/admin/Admin";
+import ProtecterRouter from "./component/auth/ProtecterRouter";
+
 
 function App() {
 
@@ -29,8 +31,13 @@ function App() {
               <Route path="/Login" element={<Login/>} />
               <Route path="/Register" element={<Register/>} />
               <Route path="/Crear" element={<ToyCreate/>} />
-              <Route path="/Logout" element={<Logout/>} />
+              <Route path="/Admin" element={
+                <ProtecterRouter>
+                  <AdminPanel/>
+                </ProtecterRouter>
+                } />
               <Route path="*" element={<p>Not Found</p>} />
+
             </Routes>
           </Layout>
         <Footer/>

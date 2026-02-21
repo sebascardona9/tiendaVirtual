@@ -1,90 +1,187 @@
-import { Link } from "react-router-dom";
-import Button from "../../../IU/bottons/Botton";
-import React from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../../firebase/firebase.config";
+import { Link, useNavigate } from "react-router-dom"
+import React from "react"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { auth } from "../../../firebase/firebase.config"
+
+const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '10px 14px',
+    border: '1px solid var(--vsm-gray)',
+    borderRadius: '5px',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    outline: 'none',
+    color: 'var(--vsm-black)',
+    backgroundColor: 'var(--vsm-white)',
+    transition: 'border-color 0.2s',
+}
+
+const labelStyle: React.CSSProperties = {
+    fontSize: '13px',
+    fontWeight: 700,
+    color: 'var(--vsm-black)',
+    display: 'block',
+    marginBottom: '6px',
+}
+
 const Login = () => {
-  const [userMail, setUserMail] = React.useState("");
-  const [userPassword, setUserPassword] = React.useState("");
+    const [userMail, setUserMail]       = React.useState("")
+    const [userPassword, setUserPassword] = React.useState("")
+    const [errorMsg, setErrorMsg]       = React.useState<string | null>(null)
+    const [loading, setLoading]         = React.useState(false)
+    const navigate = useNavigate()
 
-  const FuntionLogin = async(e: React.FormEvent) => {
-    e.preventDefault();
-    //console.log(userMail);
-    //alert("El usuario: " + userMail+ " la clave es: " + userPassword);
-    //verificamos el usuario en la base de datos firebase
-    
-    try {
-      const userCredentials = await signInWithEmailAndPassword(auth,userMail, userPassword);
-      //console.log("API KEY", import.meta.env.VITE_FIREBASE_API_KEY);
-      alert ("Bienvenido: " + userCredentials.user);
-    } catch (error:any) {
-      alert ("Error al iniciar sesión"+error.message);
-      //console.log("API KEY", import.meta.env.VITE_FIREBASE_API_KEY);
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setLoading(true)
+        try {
+            await signInWithEmailAndPassword(auth, userMail, userPassword)
+            setErrorMsg(null)
+            navigate("/Admin")
+        } catch {
+            setErrorMsg("Correo o contraseña incorrectos. Por favor verifica tus datos.")
+            setUserPassword("")
+        } finally {
+            setLoading(false)
+        }
     }
-    
-    
-  }
 
-  return (
-    <div className="flex items-center justify-center min-h-screen bg-white-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-3xl font-bold text-center">Iniciar Sesión</h2>
+    return (
+        /* Ocupa el viewport restante tras el nav (96 px) y centra el card */
+        <div
+            style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
+            className="w-full"
+        >
+            <div
+                style={{
+                    backgroundColor: 'var(--vsm-white)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 24px rgba(0,0,0,0.09)',
+                    padding: '2.5rem',
+                    width: '100%',
+                    maxWidth: '420px',
+                }}
+            >
+                {/* Heading */}
+                <h2 style={{ fontWeight: 800, fontSize: '1.6rem', color: 'var(--vsm-black)', marginBottom: '0.4rem' }}>
+                    Acceder
+                </h2>
+                <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '13px', marginBottom: '2rem' }}>
+                    ¿No tienes cuenta?{' '}
+                    <Link
+                        to="/Register"
+                        style={{ color: 'var(--vsm-brand)', fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                    >
+                        Regístrate aquí
+                    </Link>
+                </p>
 
-        <form 
-          className="space-y-4"
-          onSubmit={FuntionLogin}
-          >
+                <form onSubmit={handleLogin} noValidate>
+                    {/* Email */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <label htmlFor="email" style={labelStyle}>
+                            Nombre de usuario o correo electrónico{' '}
+                            <span style={{ color: '#DC2626' }}>*</span>
+                        </label>
+                        <input
+                            type="email"
+                            id="email"
+                            value={userMail}
+                            onChange={(e) => setUserMail(e.target.value)}
+                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
+                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            required
+                            style={inputStyle}
+                        />
+                    </div>
 
-          <div>
-            <label htmlFor="email" className="block mb-1 font-medium">
-              Correo electrónico
-            </label>
-            <input
-              type="email"
-              id="email"
-              placeholder="tu@correo.com"
-              value={userMail}
-              onChange={(e) => setUserMail(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+                    {/* Contraseña */}
+                    <div style={{ marginBottom: '1.25rem' }}>
+                        <label htmlFor="password" style={labelStyle}>
+                            Contraseña <span style={{ color: '#DC2626' }}>*</span>
+                        </label>
+                        <input
+                            type="password"
+                            id="password"
+                            value={userPassword}
+                            onChange={(e) => setUserPassword(e.target.value)}
+                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
+                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            required
+                            style={inputStyle}
+                        />
+                    </div>
 
-          <div>
-            <label htmlFor="password" className="block mb-1 font-medium">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              id="password"
-              value={userPassword}
-              onChange={(e) => setUserPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-          <Button 
-            type="submit"
-            
-          >Ingresar
-          </Button>
-        </form>
+                    {/* Recuérdame */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1.5rem' }}>
+                        <input
+                            type="checkbox"
+                            id="remember"
+                            style={{ width: '15px', height: '15px', accentColor: 'var(--vsm-brand)', cursor: 'pointer' }}
+                        />
+                        <label htmlFor="remember" style={{ fontSize: '13px', color: 'var(--vsm-gray-mid)', cursor: 'pointer' }}>
+                            Recuérdame
+                        </label>
+                    </div>
 
-        <p className="text-sm text-center text-gray-600">
-          ¿No tienes cuenta?{" "}
-          <Link to="/Register" className="text-blue-600 hover:underline">
-            Regístrate aquí
-          </Link>
-        </p>
-        
-      </div>
+                    {/* Error */}
+                    {errorMsg && (
+                        <div
+                            style={{
+                                backgroundColor: '#FEF2F2',
+                                border: '1px solid #FECACA',
+                                borderRadius: '5px',
+                                padding: '10px 14px',
+                                marginBottom: '1rem',
+                            }}
+                        >
+                            <p style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{errorMsg}</p>
+                        </div>
+                    )}
 
+                    {/* Submit */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        style={{
+                            width: '100%',
+                            backgroundColor: 'var(--vsm-brand)',
+                            color: '#fff',
+                            padding: '12px',
+                            borderRadius: '5px',
+                            border: 'none',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.07em',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.75 : 1,
+                            transition: 'opacity 0.2s',
+                            fontFamily: 'inherit',
+                        }}
+                    >
+                        {loading ? 'Verificando...' : 'Acceso'}
+                    </button>
 
-     
-    </div>
+                    {/* Olvidaste contraseña */}
+                    <p style={{ textAlign: 'center', marginTop: '1rem' }}>
+                        <a
+                            href="#"
+                            style={{
+                                color: 'var(--vsm-gray-mid)',
+                                fontSize: '12px',
+                                textDecoration: 'underline',
+                                textUnderlineOffset: '3px',
+                            }}
+                            onClick={(e) => e.preventDefault()}
+                        >
+                            ¿Olvidaste la contraseña?
+                        </a>
+                    </p>
+                </form>
+            </div>
+        </div>
+    )
+}
 
-  );
-};
-
-export default Login;
+export default Login

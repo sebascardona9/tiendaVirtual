@@ -2,31 +2,20 @@ interface ButtonProps {
     children: React.ReactNode
     onClick?: () => void
     className?: string
-    type?: "button" | "submit" | "reset" | undefined
+    type?: "button" | "submit" | "reset"
 }
 
-const Button = ({children, onClick, className = '', type="button"}: ButtonProps) => {
+const Button = ({ children, onClick, className = '', type = "button" }: ButtonProps) => {
     return (
         <button
-        type={type}
-        onClick={onClick}
-        className =
-            {`
-               w-full py-2 mt-4
-             text-white
-             bg-blue-600 rounded-lg
-             hover:bg-blue-700 transition duration-200
-                ${className}`
-            }
-        
-        >    
-
-        {children}
-
+            type={type}
+            onClick={onClick}
+            style={{ backgroundColor: 'var(--vsm-brand)', color: '#fff', borderRadius: '4px' }}
+            className={`w-full py-3 mt-4 text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity ${className}`}
+        >
+            {children}
         </button>
     )
-
-
 }
 
 export default Button

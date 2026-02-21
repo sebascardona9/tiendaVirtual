@@ -1,24 +1,20 @@
-// src/components/FooterLinks.ts
-
 export const footerData = [
-  {
-    title: 'ATENCIÓN AL CLIENTE',
-    links: [
-      { label: 'Contacto', path: '/contacto' },
-      { label: 'Cambios', path: '/cambios' },
-      { label: 'Soporte', path: '/soporte' },
-      { label: 'Tabla de talles', path: '/tallas' },
-      { label: 'Términos del servicio', path: '/terminos' },
-      { label: 'Política de reembolso', path: '/reembolsos' },
-      { label: 'Política de envíos', path: '/envios' },
-    ],
-  },
-  {
-    title: 'DESCÚBRENOS',
-    links: [
-      { label: 'Distribuidores', path: '/distribuidores' },
-      { label: 'Nuestras tiendas', path: '/tiendas' },
-      { label: 'Ubicación: COL', path: '/ubicacion' },
-    ],
-  },
-];
+    {
+        title: 'Nuestras Políticas',
+        links: [
+            { label: 'Privacidad',       path: '/privacidad'   },
+            { label: 'Términos de uso',  path: '/terminos'     },
+            { label: 'Devoluciones',     path: '/devoluciones' },
+            { label: 'Política de envío',path: '/envios'       },
+        ],
+    },
+    {
+        title: 'Más Información',
+        links: [
+            { label: 'Contacto',             path: '/contacto'     },
+            { label: 'Nuestros aromas',      path: '/aromas'       },
+            { label: 'Cómo cuidar tu vela',  path: '/cuidados'     },
+            { label: 'Preguntas frecuentes', path: '/faq'          },
+        ],
+    },
+]

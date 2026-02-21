@@ -1,8 +1,3 @@
-
-/**
- * Sebas se supone que acá vamos a llamar todos los juguetes de la BD
- * por ahora tendremos un arreglo de juguetes o un llamado de una API
- */
 interface JugueteProps {
     title: string
     slug: string
@@ -10,41 +5,13 @@ interface JugueteProps {
     precio: number
 }
 
-const juguetesData: JugueteProps[] = []
-
-juguetesData.push(
-    {
-        title: 'Juguete 1',
-        slug: 'juguete-1',
-        content: 'Contenido del juguete 1',
-        precio: 100
-    },
-    {
-        title: 'Juguete 2',
-        slug: 'juguete-2',
-        content: 'Contenido del juguete 2',
-        precio: 200
-    },
-    {
-        title: 'Juguete 3',
-        slug: 'juguete-3',
-        content: 'Contenido del juguete 3',
-        precio: 300
-    },
-
-    {
-        title: 'Juguete 4',
-        slug: 'juguete-4',
-        content: 'Contenido del juguete 4',
-        precio: 400
-    },
-    {
-        title: 'Juguete 5',
-        slug: 'juguete-5',
-        content: 'Contenido del juguete 5',
-        precio: 500
-    }
-
-)
+const juguetesData: JugueteProps[] = [
+    { title: 'Vela de Coco',     slug: 'vela-coco',     content: 'Aroma tropical a coco fresco del Caribe',      precio: 35000 },
+    { title: 'Vela de Sándalo',  slug: 'vela-sandalo',  content: 'Notas cálidas de sándalo y vainilla',          precio: 42000 },
+    { title: 'Vela de Lavanda',  slug: 'vela-lavanda',  content: 'Relajante aroma de lavanda pura',              precio: 35000 },
+    { title: 'Vela Marina',      slug: 'vela-mar',      content: 'Brisa marina del Caribe colombiano',           precio: 38000 },
+    { title: 'Vela de Rosa',     slug: 'vela-rosa',     content: 'Delicado aroma a rosas silvestres frescas',    precio: 40000 },
+    { title: 'Vela de Canela',   slug: 'vela-canela',   content: 'Cálido y especiado aroma a canela y cardamomo',precio: 38000 },
+]
 
 export default juguetesData

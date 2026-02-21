@@ -1,27 +1,24 @@
 import { useLocation } from "react-router-dom"
-import Botton_Back from "../../../IU/bottons/Botton_Back"
+
 interface LayoutProps {
     children: React.ReactNode
     alignRight?: boolean
 }
 
+const NAV_HEIGHT = '96px'
 
-
-const Layout = ({children, alignRight}: LayoutProps) => {
+const Layout = ({ children, alignRight }: LayoutProps) => {
     const location = useLocation()
-    const showBackButton = location.pathname === '/Login'
-    return (
-        <div className={`flex flex-col ${
-            alignRight ? 'items-end' : 'items-center'} mt-24 w-full px-4`}>
-            {/* Botón atrás solo para /Login */}
-            {showBackButton && (
-                <div className="self-start mb-4">
-                    <Botton_Back />
-                </div>
-            )}
-            {children}
+    const isHome = location.pathname === '/'
 
-            
+    return (
+        <div
+            style={{ marginTop: NAV_HEIGHT }}
+            className={`flex flex-col ${
+                isHome ? '' : alignRight ? 'items-end px-4' : 'items-center px-4'
+            } w-full`}
+        >
+            {children}
         </div>
     )
 }
