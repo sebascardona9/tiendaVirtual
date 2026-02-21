@@ -32,7 +32,7 @@ Diseño visual inspirado en [velasdelafe.com](https://velasdelafe.com): fondo bl
 
 ## Architecture
 
-React 19 + TypeScript + Vite 7 SPA. Firebase Authentication como backend. React Router v6 con `HashRouter` (requerido por GitHub Pages).
+React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React Router v6 con `HashRouter` (requerido por GitHub Pages).
 
 ### Entry point flow
 - `src/main.tsx` → envuelve todo en `<AuthProvider>` → renderiza `<App>`
@@ -58,20 +58,22 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Authentication como backend. React 
 - `logout()` llama a Firebase `signOut()`, que limpia la sesión de **IndexedDB**
 - **Timer de inactividad de 5 minutos**: escucha `mousemove`, `mousedown`, `keydown`, `scroll`, `touchstart`, `click`. Si no hay actividad en 5 min, cierra sesión automáticamente. El timer solo corre cuando hay sesión activa.
 - Usa `useRef` para el timer (no genera re-renders)
+- **Nota file picker**: el diálogo del OS bloquea eventos del browser. Los componentes que usen `<input type="file">` deben despachar `document.dispatchEvent(new MouseEvent('click', { bubbles: true }))` en el `onChange` para resetear el timer.
 
 **`ProtecterRouter.tsx`** — HOC que redirige a `/Login` si no hay usuario autenticado. Muestra "cargando..." mientras `loading === true`.
 
 **Regla importante:** ningún componente debe importar Firebase directamente para hacer logout. Siempre usar `const { logout } = useAuth()`.
 
 ### Layout (`src/component/pages/layaut/Layout.tsx`)
-- Aplica `marginTop: 96px` a todas las páginas para compensar el nav fijo (barra anuncio ~28px + nav principal ~68px)
+- Aplica `marginTop: 96px` a todas las páginas para compensar el nav fijo
 - Para la ruta `/` no aplica `px-4` ni `items-center`, permitiendo secciones a ancho completo
 - Para el resto de rutas aplica `items-center px-4`
 
 ### Menu (`src/component/pages/menu/Menu.tsx`)
 - **Reactivo al auth**: cuando `user` existe muestra "Admin" + botón "Cerrar sesión"; cuando no hay sesión muestra "Ingresar" + "Registro"
-- Incluye barra de anuncio negra superior: *"El costo del envío se paga al momento de la entrega"*
-- Logo: `src/assets/Images/Logo.jpeg` — reemplazar este archivo para cambiar el logo
+- **Logo dinámico**: usa `useSettings()` → `settings?.logoUrl || logoImg` (fallback a `Logo.jpeg`)
+- **Nombre dinámico**: si `settings?.storeName` existe lo muestra en el navbar; si no, muestra "Velas / Santa Marta" hardcodeado
+- Logo estático fallback: `src/assets/Images/Logo.jpeg`
 
 ### Homepage (`src/component/pages/homePage/HomePage.tsx`)
 6 secciones en orden:
@@ -87,12 +89,13 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Authentication como backend. React 
 - Inputs con `onFocus`/`onBlur` que cambian el borde a `--vsm-brand`
 - Botón con estado de carga ("Verificando..." / "Creando cuenta...")
 - Errores mostrados en caja roja suave
-- Register valida: contraseña ≥ 6 caracteres, confirmación de contraseña coincide, maneja `auth/email-already-in-use`
+- Register valida: nombre no vacío, contraseña ≥ 6 caracteres, confirmación coincide, maneja `auth/email-already-in-use`
+- Register llama `updateProfile(cred.user, { displayName: userName.trim() })` para guardar el nombre en Firebase Auth
 - Login redirige a `/Admin` tras autenticación exitosa
 - Register redirige a `/Login` tras registro exitoso
 
 ### Data layer
-`src/component/pages/juguetes/JuguetesData.tsx` — array estático de 6 velas (placeholder hasta conectar Firestore):
+`src/component/pages/juguetes/JuguetesData.tsx` — array estático de 6 velas (placeholder — **pendiente conectar a Firestore**):
 ```ts
 interface JugueteProps { title: string; slug: string; content: string; precio: number }
 ```
@@ -100,17 +103,95 @@ Velas: Coco, Sándalo, Lavanda, Marina, Rosa, Canela.
 
 ### UI components (`src/IU/`)
 - `bottons/Botton.tsx` — botón de marca (`--vsm-brand` bg, blanco, uppercase)
-- `cards/juguete.tsx` — grid 2×3 de tarjetas estilo velasdelafe: badge Nuevo/Especial (`#AEFF00`/`#00D4C8`), nombre, precio formateado en COP, botón "Añadir al carrito"
+- `cards/juguete.tsx` — grid 2×3 de tarjetas estilo velasdelafe: badge Nuevo/Especial, nombre, precio en COP, botón "Añadir al carrito"
 
 ### Footer (`src/component/pages/footer/`)
 4 columnas: Logo + Sobre Nosotros | Nuestras Políticas | Más Información | Newsletter inline.
 Links definidos en `FooterLinks.ts`.
 
+---
+
+## Admin Panel (`src/component/pages/admin/`)
+
+Panel completo con 3 secciones accesible en `/#/Admin` (protegida por `ProtecterRouter`).
+
+### Shell — `Admin.tsx`
+- Layout: header (título + saludo + logout) + sidebar 200px desktop / tab row mobile + `<main>`
+- Saludo: `user?.displayName ?? user?.email ?? 'Admin'`
+- Secciones: `dashboard` | `productos` | `configuracion` (tipo `AdminSection`)
+- Sidebar activo: `backgroundColor: var(--vsm-brand)`, blanco; inactivo: transparente, `var(--vsm-gray-mid)`
+
+### Dashboard — `dashboard/Dashboard.tsx`
+- Dos `onSnapshot` simultáneos: `collection(db,'products')` + `collection(db,'categories')`
+- Stats calculadas en cliente: `totalProductos`, `totalCategorias`, `sinStock` (stock === 0)
+- 3 tarjetas con `borderTop: 3px solid color`; la de sinStock usa rojo `#DC2626`
+- Skeleton loading con 3 boxes grises mientras cargan
+
+### Productos — `products/ProductList.tsx`
+- Dos `onSnapshot`: products + categories (para resolver `categoryId` → nombre)
+- Tabs: "Productos" | "Categorías" (tipo `ProductsTab`)
+- Tabla paginada: `ITEMS_PER_PAGE = 10`, reset página cuando cambia la lista
+- Columnas: imagen (48px con fallback 🕯️), nombre, categoría, precio COP, stock (rojo si 0), acciones
+- "Nuevo Producto" → `ProductForm` sin `product`; "Editar" → `ProductForm` con `product`; "Eliminar" → `ConfirmDialog`
+
+### Formulario producto — `products/ProductForm.tsx`
+- Modo create (`!product`) vs edit (`!!product`)
+- Campos: nombre, descripción, precio, stock, categoría (select), URL imagen (texto), archivo imagen
+- File input despacha `click` sintético en `onChange` para resetear el timer de inactividad
+- Flujo create con imagen: `addDoc` → obtener ID → `uploadBytes` → `updateDoc` con URL
+- El upload de imagen es **no-fatal**: si falla, el producto se guarda de todas formas y se muestra un aviso
+- `price` y `stock` son `number | ''` para permitir campo vacío → al guardar `Number(val) || 0`
+
+### Categorías — `products/CategoryList.tsx`
+- `onSnapshot` en `collection(db,'categories')` ordenado por `createdAt asc`
+- CRUD inline: agregar, editar (input inline), eliminar con `ConfirmDialog`
+- Validación: nombre vacío o duplicado → error inline
+- Eliminar muestra mensaje: "Esto no eliminará los productos asociados."
+
+### Configuración — `settings/Settings.tsx`
+- Carga inicial: `getDoc(doc(db,'settings','general'))` (no onSnapshot)
+- Campos: storeName, description, email, phone, social (instagram, facebook, whatsapp, tiktok)
+- Logo: file input → `uploadBytes` a ruta fija `logos/store-logo.{ext}` (sobreescribe) → `getDownloadURL`
+  - Preview local con `URL.createObjectURL`; reset file input con `key={fileInputKey}` state
+- Guardar: `setDoc(..., { merge: true })` con `serverTimestamp()`
+- Banner éxito verde 3 segundos; error en caja roja
+
+### Shared UI — `shared/`
+- **`AdminModal.tsx`**: overlay fixed zIndex 50, cierra con X / click overlay / ESC, bloquea scroll del body
+- **`ConfirmDialog.tsx`**: wrapper sobre AdminModal, botón "Cancelar" (gris) + "Eliminar" (rojo `#DC2626`)
+
+---
+
 ## Firebase
 
-Solo Firebase Auth inicializado (`getAuth`). Firestore y Storage **no** están configurados aún.
+Auth + Firestore + Storage inicializados en `src/firebase/firebase.config.ts`.
+Exports: `auth`, `db`, `storage`.
 
-Variables de entorno requeridas en `.env` (no se commitea):
+### Colecciones Firestore
+| Colección | Campos clave |
+|-----------|-------------|
+| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `imageUrl`, `createdAt`, `updatedAt` |
+| `categories` | `name`, `createdAt` |
+| `settings/general` | `storeName`, `logoUrl`, `description`, `email`, `phone`, `social`, `updatedAt` |
+
+### Storage paths
+- `logos/store-logo.{ext}` — logo de la tienda (ruta fija, siempre sobreescribe)
+- `products/{productId}/image.{ext}` — imagen por producto
+
+### Reglas Firestore
+```
+match /settings/{id}   { allow read: if true; allow write: if request.auth != null; }
+match /products/{id}   { allow read: if true; allow write: if request.auth != null; }
+match /categories/{id} { allow read: if true; allow write: if request.auth != null; }
+```
+
+### Reglas Storage
+```
+match /logos/{path=**}    { allow read: if true; allow write: if request.auth != null; }
+match /products/{path=**} { allow read: if true; allow write: if request.auth != null; }
+```
+
+### Variables de entorno (`.env`, no se commitea)
 ```
 VITE_FIREBASE_API_KEY=
 VITE_FIREBASE_AUTH_DOMAIN=
@@ -122,11 +203,35 @@ VITE_FIREBASE_MEASUREMENT_ID=
 ```
 
 ### Mejora pendiente (session persistence)
-Firebase usa `browserLocalPersistence` por defecto (sesión persiste entre reinicios del navegador). Para el panel admin se recomienda `browserSessionPersistence` (se borra al cerrar la pestaña). Configurar en `src/firebase/firebase.config.ts`:
+Firebase usa `browserLocalPersistence` por defecto. Para el panel admin se recomienda `browserSessionPersistence`:
 ```ts
 import { setPersistence, browserSessionPersistence } from "firebase/auth"
 setPersistence(auth, browserSessionPersistence)
 ```
+
+---
+
+## Hooks y Types
+
+### `src/hooks/useSettings.ts`
+- `onSnapshot` en `doc(db,'settings','general')`
+- Error handler silencioso (usuarios no autenticados no rompen el navbar)
+- Retorna `{ settings: StoreSettings | null, loading: boolean }`
+- Usado en `Menu.tsx` para logo y nombre dinámicos
+
+### `src/types/admin.ts`
+Interfaces centralizadas: `Product`, `Category`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `SettingsFormData`, `AdminSection`, `ProductsTab`
+
+---
+
+## Pendiente (próximas sesiones)
+- Conectar catálogo público (`CardJuguete` / `JuguetesData.tsx`) a Firestore en vez de datos estáticos
+- Gestión de pedidos / carrito
+- `browserSessionPersistence` para el panel admin
+
+## Archivos que NO se modifican
+`App.tsx`, `Layout.tsx`, `authContext.tsx`, `ProtecterRouter.tsx`, `Footer.tsx`,
+`JuguetesData.tsx`, `CardJuguete.tsx`, `HomePage.tsx`, `Login.tsx`, `index.css`
 
 ## Deployment
 

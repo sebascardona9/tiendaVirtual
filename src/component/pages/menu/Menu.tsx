@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../auth/authContext"
+import { useSettings } from '../../../hooks/useSettings'
 import logoImg from '../../../assets/Images/Logo.jpeg'
 
 const navLinks = [
@@ -12,6 +13,8 @@ const navLinks = [
 const Menu = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
+    const { settings } = useSettings()
+    const logoSrc = settings?.logoUrl || logoImg
 
     const handleLogout = async () => {
         await logout()
@@ -22,7 +25,7 @@ const Menu = () => {
         <header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 40 }}>
 
             {/* Announcement bar */}
-            <div
+            {/* <div
                 style={{
                     backgroundColor: '#111',
                     color: '#fff',
@@ -34,7 +37,7 @@ const Menu = () => {
                 }}
             >
                 El costo del envío se paga al momento de la entrega
-            </div>
+            </div> */}
 
             {/* Main nav */}
             <nav
@@ -44,17 +47,25 @@ const Menu = () => {
                 {/* Logo */}
                 <NavLink to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <img
-                        src={logoImg}
+                        src={logoSrc}
                         alt="Velas Santa Marta"
                         style={{ height: '38px', width: 'auto', objectFit: 'contain' }}
                     />
                     <div>
-                        <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.1 }}>
-                            Velas
-                        </span>
-                        <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                            Santa Marta
-                        </span>
+                        {settings?.storeName ? (
+                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.2 }}>
+                                {settings.storeName}
+                            </span>
+                        ) : (
+                            <>
+                                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.1 }}>
+                                    Velas
+                                </span>
+                                <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                                    Santa Marta
+                                </span>
+                            </>
+                        )}
                     </div>
                 </NavLink>
 

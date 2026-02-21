@@ -1,6 +1,6 @@
 import React from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { createUserWithEmailAndPassword } from "firebase/auth"
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { auth } from "../../../firebase/firebase.config"
 
 const inputStyle: React.CSSProperties = {
@@ -36,6 +36,10 @@ const Register = () => {
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
 
+        if (userName.trim().length === 0) {
+            setErrorMsg("Ingresa tu nombre completo.")
+            return
+        }
         if (userPassword !== confirmPassword) {
             setErrorMsg("Las contraseñas no coinciden.")
             return
@@ -47,7 +51,8 @@ const Register = () => {
 
         setLoading(true)
         try {
-            await createUserWithEmailAndPassword(auth, userMail, userPassword)
+            const cred = await createUserWithEmailAndPassword(auth, userMail, userPassword)
+            await updateProfile(cred.user, { displayName: userName.trim() })
             setErrorMsg(null)
             navigate("/Login")
         } catch (error: any) {
