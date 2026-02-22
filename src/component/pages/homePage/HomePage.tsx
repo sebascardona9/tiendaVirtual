@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom"
-import CardJuguete from "../../../IU/cards/juguete"
+import CardJuguete from "../../../ui/cards/juguete"
 
 const velaTipos = [
     { icon: '🌿', name: 'Velas de Soya'        },

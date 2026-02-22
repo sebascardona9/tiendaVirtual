@@ -13,7 +13,7 @@ const navLinks = [
 const Menu = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
-    const { settings } = useSettings()
+    const { settings, loading } = useSettings()
     const logoSrc = settings?.logoUrl || logoImg
 
     const handleLogout = async () => {
@@ -23,23 +23,6 @@ const Menu = () => {
 
     return (
         <header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 40 }}>
-
-            {/* Announcement bar */}
-            {/* <div
-                style={{
-                    backgroundColor: '#111',
-                    color: '#fff',
-                    textAlign: 'center',
-                    padding: '7px 1rem',
-                    fontSize: '12px',
-                    letterSpacing: '0.05em',
-                    fontWeight: 500,
-                }}
-            >
-                El costo del envío se paga al momento de la entrega
-            </div> */}
-
-            {/* Main nav */}
             <nav
                 style={{ backgroundColor: 'var(--vsm-white)', borderBottom: '1px solid var(--vsm-gray)' }}
                 className="flex justify-between items-center py-3 px-8"
@@ -51,22 +34,24 @@ const Menu = () => {
                         alt="Velas Santa Marta"
                         style={{ height: '38px', width: 'auto', objectFit: 'contain' }}
                     />
-                    <div>
-                        {settings?.storeName ? (
-                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.2 }}>
-                                {settings.storeName}
-                            </span>
-                        ) : (
-                            <>
-                                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.1 }}>
-                                    Velas
+                    {!loading && (
+                        <div>
+                            {settings?.storeName ? (
+                                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.2 }}>
+                                    {settings.storeName}
                                 </span>
-                                <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                                    Santa Marta
-                                </span>
-                            </>
-                        )}
-                    </div>
+                            ) : (
+                                <>
+                                    {/* <span style={{ fontWeight: 800, fontSize: '1rem', color: '#111', display: 'block', lineHeight: 1.1 }}>
+                                        Velas
+                                    </span>
+                                    <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                                        Santa Marta
+                                    </span> */}
+                                </>
+                            )}
+                        </div>
+                    )}
                 </NavLink>
 
                 {/* Center links */}
