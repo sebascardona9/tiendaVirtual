@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { collection, onSnapshot, deleteDoc, doc } from 'firebase/firestore'
+import { useState, useEffect, useMemo } from 'react'
+import { deleteDoc, doc } from 'firebase/firestore'
 import { db } from '../../../../firebase/firebase.config'
 import type { Product, Category, ProductsTab } from '../../../../types/admin'
+import useCollection from '../../../../hooks/useCollection'
 import ProductForm from './ProductForm'
 import CategoryList from './CategoryList'
 import ConfirmDialog from '../shared/ConfirmDialog'
@@ -9,28 +10,23 @@ import ConfirmDialog from '../shared/ConfirmDialog'
 const ITEMS_PER_PAGE = 10
 
 const ProductList = () => {
-  const [products, setProducts]     = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
+  const { data: products }   = useCollection<Product>('products')
+  const { data: categories } = useCollection<Category>('categories')
+
   const [activeTab, setActiveTab]   = useState<ProductsTab>('productos')
   const [page, setPage]             = useState(1)
+  // Reset to first page whenever the product list changes
+  useEffect(() => { setPage(1) }, [products])
   const [showForm, setShowForm]     = useState(false)
   const [editProduct, setEditProduct]   = useState<Product | undefined>()
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
-  useEffect(() => {
-    const unsubProd = onSnapshot(collection(db, 'products'), (snap) => {
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)))
-      setPage(1)
-    })
-    const unsubCat = onSnapshot(collection(db, 'categories'), (snap) => {
-      setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category)))
-    })
-    return () => { unsubProd(); unsubCat() }
-  }, [])
-
-  const getCategoryName = (id: string) =>
-    categories.find(c => c.id === id)?.name ?? '—'
+  const categoryMap = useMemo(
+    () => new Map(categories.map(c => [c.id, c.name])),
+    [categories],
+  )
+  const getCategoryName = (id: string) => categoryMap.get(id) ?? '—'
 
   const totalPages = Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE))
   const paginated  = products.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)

@@ -6,6 +6,9 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../../../firebase/firebase.config'
 import type { Product, Category, ProductFormData } from '../../../../types/admin'
 import AdminModal from '../shared/AdminModal'
+import useFilePickerReset from '../../../../hooks/useFilePickerReset'
+
+const MAX_IMAGES = 5
 
 interface ProductFormProps {
   isOpen: boolean
@@ -38,29 +41,85 @@ const labelStyle: React.CSSProperties = {
   marginBottom: '5px',
 }
 
+const removeBtn: React.CSSProperties = {
+  position: 'absolute', top: -6, right: -6,
+  width: 20, height: 20, borderRadius: '50%',
+  backgroundColor: '#DC2626', color: '#fff',
+  border: 'none', cursor: 'pointer',
+  fontSize: '10px', fontWeight: 700,
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontFamily: 'inherit', lineHeight: 1, padding: 0,
+}
+
 const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps) => {
-  const [formData, setFormData] = useState<ProductFormData>(emptyForm)
-  const [imageFile, setImageFile] = useState<File | null>(null)
-  const [error, setError]         = useState<string | null>(null)
-  const [loading, setLoading]     = useState(false)
+  const resetTimer = useFilePickerReset()
+
+  const [formData, setFormData]       = useState<ProductFormData>(emptyForm)
+  // committed image URLs (already in Firestore or added via URL input)
+  const [images, setImages]           = useState<string[]>([])
+  // files selected but not yet uploaded
+  const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [urlInput, setUrlInput]       = useState('')
+  const [fileInputKey, setFileInputKey] = useState(0)
+  const [error, setError]             = useState<string | null>(null)
+  const [loading, setLoading]         = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setFormData(product ? {
-        name: product.name,
+        name:        product.name,
         description: product.description,
-        price: product.price,
-        stock: product.stock,
-        categoryId: product.categoryId,
-        imageUrl: product.imageUrl,
+        price:       product.price,
+        stock:       product.stock,
+        categoryId:  product.categoryId,
+        imageUrl:    product.imageUrl,
       } : emptyForm)
-      setImageFile(null)
+
+      // Normalize existing images
+      const existing = product?.images?.length
+        ? product.images
+        : product?.imageUrl
+        ? [product.imageUrl]
+        : []
+      setImages(existing)
+      setPendingFiles([])
+      setUrlInput('')
+      setFileInputKey(k => k + 1)
       setError(null)
     }
   }, [isOpen, product])
 
   const set = (field: keyof ProductFormData, value: string | number) =>
     setFormData(prev => ({ ...prev, [field]: value }))
+
+  const totalCount = images.length + pendingFiles.length
+  const canAddMore = totalCount < MAX_IMAGES
+
+  const addUrlImage = () => {
+    const url = urlInput.trim()
+    if (!url || !canAddMore) return
+    setImages(prev => [...prev, url])
+    setUrlInput('')
+  }
+
+  const removeCommitted = (i: number) => setImages(prev => prev.filter((_, idx) => idx !== i))
+  const removePending   = (i: number) => setPendingFiles(prev => prev.filter((_, idx) => idx !== i))
+
+  const handleFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    resetTimer()
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const slots = MAX_IMAGES - totalCount
+    setPendingFiles(prev => [...prev, ...files.slice(0, slots)])
+    setFileInputKey(k => k + 1)
+  }
+
+  const uploadFile = async (file: File, productId: string, index: number): Promise<string> => {
+    const ext = file.name.split('.').pop()
+    const storageRef = ref(storage, `products/${productId}/image-${Date.now()}-${index}.${ext}`)
+    await uploadBytes(storageRef, file)
+    return getDownloadURL(storageRef)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -69,49 +128,65 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
     setLoading(true)
     setError(null)
     try {
-      const payload = {
+      const base = {
         name:        formData.name.trim(),
         description: formData.description.trim(),
-        price:       Number(formData.price)  || 0,
-        stock:       Number(formData.stock)  || 0,
+        price:       Number(formData.price) || 0,
+        stock:       Number(formData.stock) || 0,
         categoryId:  formData.categoryId,
-        imageUrl:    formData.imageUrl.trim(),
       }
 
       if (product) {
-        // EDIT
-        let imageUrl = payload.imageUrl
-        if (imageFile) {
+        // ── EDIT ──
+        const uploadedUrls: string[] = []
+        for (let i = 0; i < pendingFiles.length; i++) {
           try {
-            const ext = imageFile.name.split('.').pop()
-            const storageRef = ref(storage, `products/${product.id}/image.${ext}`)
-            await uploadBytes(storageRef, imageFile)
-            imageUrl = await getDownloadURL(storageRef)
-          } catch (uploadErr) {
-            console.warn('Image upload failed, saving without new image:', uploadErr)
-            setError('Producto guardado, pero la imagen no pudo subirse. Verifica que Firebase Storage esté activado.')
+            uploadedUrls.push(await uploadFile(pendingFiles[i], product.id, i))
+          } catch {
+            console.warn('Upload failed for file', i)
           }
         }
+        const finalImages = [...images, ...uploadedUrls]
         await updateDoc(doc(db, 'products', product.id), {
-          ...payload, imageUrl, updatedAt: serverTimestamp(),
+          ...base,
+          imageUrl:  finalImages[0] ?? '',
+          images:    finalImages,
+          updatedAt: serverTimestamp(),
         })
+        if (uploadedUrls.length < pendingFiles.length) {
+          setError('Producto guardado, pero algunas imágenes no pudieron subirse.')
+          setLoading(false)
+          return
+        }
       } else {
-        // CREATE
+        // ── CREATE ──
         const docRef = await addDoc(collection(db, 'products'), {
-          ...payload, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+          ...base,
+          imageUrl:  images[0] ?? '',
+          images:    images,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         })
-        if (imageFile) {
-          try {
-            const ext = imageFile.name.split('.').pop()
-            const storageRef = ref(storage, `products/${docRef.id}/image.${ext}`)
-            await uploadBytes(storageRef, imageFile)
-            const imageUrl = await getDownloadURL(storageRef)
-            await updateDoc(doc(db, 'products', docRef.id), { imageUrl })
-          } catch (uploadErr) {
-            console.warn('Image upload failed, product saved without image:', uploadErr)
-            setError('Producto creado, pero la imagen no pudo subirse. Verifica que Firebase Storage esté activado.')
+        if (pendingFiles.length > 0) {
+          const uploadedUrls: string[] = []
+          for (let i = 0; i < pendingFiles.length; i++) {
+            try {
+              uploadedUrls.push(await uploadFile(pendingFiles[i], docRef.id, i))
+            } catch {
+              console.warn('Upload failed for file', i)
+            }
+          }
+          if (uploadedUrls.length > 0) {
+            const finalImages = [...images, ...uploadedUrls]
+            await updateDoc(doc(db, 'products', docRef.id), {
+              imageUrl: finalImages[0] ?? '',
+              images:   finalImages,
+            })
+          }
+          if (uploadedUrls.length < pendingFiles.length) {
+            setError('Producto creado, pero algunas imágenes no pudieron subirse.')
             setLoading(false)
-            return // leave modal open so user sees the warning
+            return
           }
         }
       }
@@ -125,7 +200,7 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
     }
   }
 
-  const focusBrand  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+  const focusBrand = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     (e.currentTarget.style.borderColor = 'var(--vsm-brand)')
   const blurGray = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     (e.currentTarget.style.borderColor = 'var(--vsm-gray)')
@@ -162,8 +237,7 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
             <div>
               <label style={labelStyle}>Precio (COP)</label>
               <input
-                type="number" min="0" value={formData.price}
-                placeholder="0"
+                type="number" min="0" value={formData.price} placeholder="0"
                 onChange={e => set('price', e.target.value === '' ? '' : Number(e.target.value))}
                 style={inputStyle} onFocus={focusBrand} onBlur={blurGray}
               />
@@ -171,8 +245,7 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
             <div>
               <label style={labelStyle}>Stock</label>
               <input
-                type="number" min="0" value={formData.stock}
-                placeholder="0"
+                type="number" min="0" value={formData.stock} placeholder="0"
                 onChange={e => set('stock', e.target.value === '' ? '' : Number(e.target.value))}
                 style={inputStyle} onFocus={focusBrand} onBlur={blurGray}
               />
@@ -193,33 +266,118 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
             </select>
           </div>
 
-          {/* URL imagen */}
+          {/* ── Imágenes ── */}
           <div>
-            <label style={labelStyle}>URL de imagen</label>
-            <input
-              value={formData.imageUrl}
-              onChange={e => set('imageUrl', e.target.value)}
-              placeholder="https://..."
-              style={inputStyle} onFocus={focusBrand} onBlur={blurGray}
-            />
-          </div>
+            <label style={labelStyle}>
+              Imágenes{' '}
+              <span style={{ color: 'var(--vsm-gray-mid)', fontWeight: 400 }}>
+                ({totalCount}/{MAX_IMAGES}) — la primera es la principal
+              </span>
+            </label>
 
-          {/* Archivo imagen */}
-          <div>
-            <label style={labelStyle}>O subir archivo de imagen</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={e => {
-                // Reset inactivity timer: the OS file picker blocks browser events
-                document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-                setImageFile(e.target.files?.[0] ?? null)
-              }}
-              style={{ fontSize: '13px', color: 'var(--vsm-gray-mid)' }}
-            />
-            {imageFile && (
+            {/* Previews */}
+            {totalCount > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '0.75rem' }}>
+                {images.map((url, i) => (
+                  <div key={i} style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                    <img
+                      src={url}
+                      alt={`Imagen ${i + 1}`}
+                      style={{
+                        width: 72, height: 72, objectFit: 'cover',
+                        borderRadius: '5px',
+                        border: i === 0
+                          ? '2px solid var(--vsm-brand)'
+                          : '1px solid var(--vsm-gray)',
+                      }}
+                    />
+                    {i === 0 && (
+                      <span style={{
+                        position: 'absolute', bottom: 3, left: 3,
+                        backgroundColor: 'var(--vsm-brand)', color: '#fff',
+                        fontSize: '9px', fontWeight: 700,
+                        padding: '1px 5px', borderRadius: '2px',
+                      }}>
+                        Principal
+                      </span>
+                    )}
+                    <button type="button" onClick={() => removeCommitted(i)} style={removeBtn}>✕</button>
+                  </div>
+                ))}
+
+                {pendingFiles.map((file, i) => (
+                  <div key={`p-${i}`} style={{ position: 'relative', width: 72, height: 72, flexShrink: 0 }}>
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      style={{
+                        width: 72, height: 72, objectFit: 'cover',
+                        borderRadius: '5px',
+                        border: '2px dashed var(--vsm-brand)',
+                      }}
+                    />
+                    <span style={{
+                      position: 'absolute', bottom: 3, left: 3,
+                      backgroundColor: '#F5A623', color: '#fff',
+                      fontSize: '9px', fontWeight: 700,
+                      padding: '1px 5px', borderRadius: '2px',
+                    }}>
+                      Por subir
+                    </span>
+                    <button type="button" onClick={() => removePending(i)} style={removeBtn}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Agregar por URL */}
+            {canAddMore && (
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <input
+                  value={urlInput}
+                  onChange={e => setUrlInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addUrlImage() } }}
+                  placeholder="https://... pegar URL de imagen"
+                  style={{ ...inputStyle, flex: 1 }}
+                  onFocus={focusBrand} onBlur={blurGray}
+                />
+                <button
+                  type="button"
+                  onClick={addUrlImage}
+                  disabled={!urlInput.trim()}
+                  style={{
+                    padding: '9px 14px', borderRadius: '5px', border: 'none',
+                    backgroundColor: urlInput.trim() ? 'var(--vsm-brand)' : 'var(--vsm-gray)',
+                    color: '#fff', fontSize: '12px', fontWeight: 700,
+                    cursor: urlInput.trim() ? 'pointer' : 'not-allowed',
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >
+                  + URL
+                </button>
+              </div>
+            )}
+
+            {/* Subir archivo */}
+            {canAddMore && (
+              <div>
+                <p style={{ fontSize: '11px', color: 'var(--vsm-gray-mid)', marginBottom: '4px' }}>
+                  O subir archivo(s):
+                </p>
+                <input
+                  key={fileInputKey}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileAdd}
+                  style={{ fontSize: '13px', color: 'var(--vsm-gray-mid)' }}
+                />
+              </div>
+            )}
+
+            {!canAddMore && (
               <p style={{ fontSize: '12px', color: 'var(--vsm-gray-mid)', marginTop: '4px' }}>
-                Archivo: {imageFile.name}
+                Máximo de {MAX_IMAGES} imágenes alcanzado.
               </p>
             )}
           </div>
@@ -242,6 +400,7 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>
+
         </div>
       </form>
     </AdminModal>

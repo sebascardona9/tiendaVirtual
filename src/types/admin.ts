@@ -8,6 +8,7 @@ export interface Product {
   stock: number
   categoryId: string
   imageUrl: string
+  images?: string[]   // array de 1-5 URLs; si existe toma precedencia sobre imageUrl
   createdAt: Timestamp
   updatedAt: Timestamp
 }
@@ -41,7 +42,7 @@ export interface ProductFormData {
   price: number | ''
   stock: number | ''
   categoryId: string
-  imageUrl: string
+  imageUrl: string  // kept for backwards compat — always mirrors images[0]
 }
 
 export interface SettingsFormData {

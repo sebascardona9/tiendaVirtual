@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
-  collection, onSnapshot, addDoc, updateDoc, deleteDoc,
-  doc, serverTimestamp, query, orderBy,
+  addDoc, updateDoc, deleteDoc,
+  collection, doc, serverTimestamp, orderBy,
 } from 'firebase/firestore'
 import { db } from '../../../../firebase/firebase.config'
 import type { Category } from '../../../../types/admin'
 import ConfirmDialog from '../shared/ConfirmDialog'
+import useCollection from '../../../../hooks/useCollection'
 
 const inputStyle: React.CSSProperties = {
   padding: '8px 12px',
@@ -18,7 +19,8 @@ const inputStyle: React.CSSProperties = {
 }
 
 const CategoryList = () => {
-  const [categories, setCategories]   = useState<Category[]>([])
+  const { data: categories } = useCollection<Category>('categories', orderBy('createdAt', 'asc'))
+
   const [newName, setNewName]         = useState('')
   const [addError, setAddError]       = useState<string | null>(null)
   const [addLoading, setAddLoading]   = useState(false)
@@ -28,14 +30,6 @@ const CategoryList = () => {
   const [editLoading, setEditLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
-
-  useEffect(() => {
-    const q = query(collection(db, 'categories'), orderBy('createdAt', 'asc'))
-    const unsub = onSnapshot(q, (snap) => {
-      setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category)))
-    })
-    return () => unsub()
-  }, [])
 
   const handleAdd = async () => {
     const trimmed = newName.trim()

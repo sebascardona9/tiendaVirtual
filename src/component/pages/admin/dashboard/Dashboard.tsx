@@ -1,38 +1,10 @@
-import { useState, useEffect } from 'react'
-import { collection, onSnapshot } from 'firebase/firestore'
-import { db } from '../../../../firebase/firebase.config'
+import useCollection from '../../../../hooks/useCollection'
 import type { Product, Category } from '../../../../types/admin'
 
 const Dashboard = () => {
-  const [products, setProducts]     = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
-  const [loading, setLoading]       = useState(true)
-
-  useEffect(() => {
-    let prodLoaded = false
-    let catLoaded  = false
-
-    const checkDone = () => {
-      if (prodLoaded && catLoaded) setLoading(false)
-    }
-
-    const unsubProd = onSnapshot(collection(db, 'products'), (snap) => {
-      setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() } as Product)))
-      prodLoaded = true
-      checkDone()
-    })
-
-    const unsubCat = onSnapshot(collection(db, 'categories'), (snap) => {
-      setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category)))
-      catLoaded = true
-      checkDone()
-    })
-
-    return () => {
-      unsubProd()
-      unsubCat()
-    }
-  }, [])
+  const { data: products,   loading: loadingProd } = useCollection<Product>('products')
+  const { data: categories, loading: loadingCat  } = useCollection<Category>('categories')
+  const loading = loadingProd || loadingCat
 
   const sinStock = products.filter(p => p.stock === 0).length
 

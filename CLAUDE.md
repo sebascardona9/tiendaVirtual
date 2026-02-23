@@ -60,7 +60,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Usa `useRef` para el timer (no genera re-renders)
 - **Nota file picker**: el diálogo del OS bloquea eventos del browser. Los componentes que usen `<input type="file">` deben despachar `document.dispatchEvent(new MouseEvent('click', { bubbles: true }))` en el `onChange` para resetear el timer.
 
-**`ProtecterRouter.tsx`** — HOC que redirige a `/Login` si no hay usuario autenticado. Muestra "cargando..." mientras `loading === true`.
+**`ProtecterRouter.tsx`** — HOC que redirige a `/Login` si no hay usuario autenticado. Muestra "cargando..." mientras `loading === true`. Props tipadas con `React.PropsWithChildren`.
 
 **Regla importante:** ningún componente debe importar Firebase directamente para hacer logout. Siempre usar `const { logout } = useAuth()`.
 
@@ -75,14 +75,17 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - **Nombre dinámico**: si `settings?.storeName` existe lo muestra en el navbar; si no, muestra "Velas / Santa Marta" hardcodeado
 - Logo estático fallback: `src/assets/Images/Logo.jpeg`
 
-### Homepage (`src/component/pages/homePage/HomePage.tsx`)
-6 secciones en orden:
-1. **Hero** — gradiente oscuro cálido, texto blanco, CTA "Comprar ahora"
-2. **"Conoce nuestras Velas"** — 2 tarjetas de categoría (fondo blanco)
-3. **"Nuestros Productos"** — grid de `<CardJuguete/>` con `<Outlet/>` para detalle anidado
-4. **"Tipos de Velas"** — 4 categorías en grid (Soya, Cera de Abeja, Decorativas, Aromáticas)
-5. **Reseñas** — 3 testimonios estáticos
-6. **Newsletter** — formulario "Regístrate y obtén 10% OFF" (fondo color de marca)
+### Homepage (`src/component/pages/homePage/`)
+`HomePage.tsx` es un orquestador que compone 6 secciones desde `homePage/sections/`:
+
+| Archivo | Sección |
+|---------|---------|
+| `HeroSection.tsx` | Gradiente oscuro cálido, texto blanco, CTA "Comprar ahora" |
+| `CategoryCards.tsx` | "Conoce nuestras Velas" — 2 tarjetas de categoría |
+| `ProductsSection.tsx` | "Nuestros Productos" — `<CardJuguete/>` + `<Outlet/>` |
+| `CandleTypesSection.tsx` | "Tipos de Velas" — 4 categorías en grid |
+| `ReviewsSection.tsx` | "Lo que dicen nuestros clientes" — 3 testimonios |
+| `NewsletterSection.tsx` | "Regístrate y obtén 10% OFF" — formulario email |
 
 ### Login & Register
 - Ambos usan `minHeight: calc(100vh - 96px)` para centrar el card correctamente bajo el nav fijo
@@ -94,12 +97,22 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Login redirige a `/Admin` tras autenticación exitosa
 - Register redirige a `/Login` tras registro exitoso
 
-### Data layer
-`src/component/pages/juguetes/JuguetesData.tsx` — array estático de 6 velas (placeholder — **pendiente conectar a Firestore**):
-```ts
-interface JugueteProps { title: string; slug: string; content: string; precio: number }
-```
-Velas: Coco, Sándalo, Lavanda, Marina, Rosa, Canela.
+### Data layer — Catálogo público
+El catálogo ya conecta a Firestore. `JuguetesData.tsx` es archivo legacy protegido (no se usa).
+
+**`src/ui/cards/ProductCard.tsx`** — tarjeta del catálogo:
+- Lee `product.images[]`; si no existe usa `product.imageUrl` como fallback
+- Crossfade al hover si hay ≥ 2 imágenes (opacity transition 0.4s)
+- Badge "Agotado" si `stock === 0`; botón deshabilitado
+- Link a `/juguetes/${product.id}`
+
+**`src/component/pages/juguetes/JugueteDetalle.tsx`** — página de detalle:
+- `getDoc(doc(db,'products', id))` donde `id` viene de `useParams().slug`
+- Imagen principal con zoom (scale 1.08) al hover + fade 150ms al cambiar
+- Miniaturas horizontales scrolleables (ocultas si solo hay 1 imagen)
+- Miniatura activa con borde `var(--vsm-brand)`
+
+**`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
 
 ### UI components (`src/IU/`)
 - `bottons/Botton.tsx` — botón de marca (`--vsm-brand` bg, blanco, uppercase)
@@ -211,6 +224,19 @@ setPersistence(auth, browserSessionPersistence)
 
 ---
 
+## Services (`src/services/`)
+
+### `settingsService.ts`
+Encapsula toda la lógica Firebase de configuración de la tienda. `Settings.tsx` no importa Firebase directamente.
+
+| Función | Descripción |
+|---------|-------------|
+| `fetchSettings()` | `getDoc` de `settings/general` → `StoreSettings \| null` |
+| `uploadLogo(file)` | Sube a `logos/store-logo.{ext}` → retorna download URL |
+| `saveSettings(data, logoUrl)` | `setDoc` con `merge: true` + `serverTimestamp()` |
+
+---
+
 ## Hooks y Types
 
 ### `src/hooks/useSettings.ts`
@@ -219,22 +245,37 @@ setPersistence(auth, browserSessionPersistence)
 - Retorna `{ settings: StoreSettings | null, loading: boolean }`
 - Usado en `Menu.tsx` para logo y nombre dinámicos
 
+### `src/hooks/useFilePickerReset.ts`
+- Retorna `resetTimer()`: despacha un `click` sintético en `document`
+- Usar en el `onChange` de cualquier `<input type="file">` para resetear el timer de inactividad del auth context (el diálogo del OS bloquea eventos del browser mientras está abierto)
+
+### `src/hooks/useCollection.ts`
+- Genérico: `useCollection<T>(collectionName, ...constraints)` → `{ data: T[], loading: boolean }`
+- Suscribe con `onSnapshot`, mapea docs a `{ id, ...data }`, hace unsubscribe en cleanup
+- Acepta `QueryConstraint` opcionales (ej: `orderBy('createdAt', 'asc')`)
+
 ### `src/types/admin.ts`
 Interfaces centralizadas: `Product`, `Category`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `SettingsFormData`, `AdminSection`, `ProductsTab`
 
 ---
 
 ## Pendiente (próximas sesiones)
-- Conectar catálogo público (`CardJuguete` / `JuguetesData.tsx`) a Firestore en vez de datos estáticos
 - Gestión de pedidos / carrito
 - `browserSessionPersistence` para el panel admin
+- Gestión de pedidos / carrito
 
 ## Archivos que NO se modifican
 `App.tsx`, `Layout.tsx`, `authContext.tsx`, `ProtecterRouter.tsx`, `Footer.tsx`,
-`JuguetesData.tsx`, `CardJuguete.tsx`, `HomePage.tsx`, `Login.tsx`, `index.css`
+`JuguetesData.tsx`, `CardJuguete.tsx`, `Login.tsx`, `index.css`
+
+> `HomePage.tsx` ya no está protegido — ahora es un orquestador de 6 secciones en `homePage/sections/`
 
 ## Deployment
 
 - Vite base: `/tiendaVirtual/` (GitHub Pages)
 - `HashRouter` en vez de `BrowserRouter` para evitar errores 404 en GitHub Pages
 - `npm run deploy` hace build y publica la carpeta `dist/` en la rama `gh-pages`
+
+## Commits
+- Nunca incluir Co-Authored-By en los mensajes de commit
+- El autor siempre soy yo

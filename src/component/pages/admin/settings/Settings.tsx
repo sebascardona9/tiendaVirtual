@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { getDoc, setDoc, doc, serverTimestamp } from 'firebase/firestore'
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
-import { db, storage } from '../../../../firebase/firebase.config'
-import type { StoreSettings, SettingsFormData } from '../../../../types/admin'
+import type { SettingsFormData } from '../../../../types/admin'
+import { fetchSettings, uploadLogo, saveSettings } from '../../../../services/settingsService'
+import useFilePickerReset from '../../../../hooks/useFilePickerReset'
 
 const emptyForm: SettingsFormData = {
   storeName: '',
@@ -33,6 +32,8 @@ const labelStyle: React.CSSProperties = {
 }
 
 const Settings = () => {
+  const resetTimer = useFilePickerReset()
+
   const [formData, setFormData]       = useState<SettingsFormData>(emptyForm)
   const [currentLogoUrl, setCurrentLogoUrl] = useState('')
   const [logoFile, setLogoFile]       = useState<File | null>(null)
@@ -44,9 +45,8 @@ const Settings = () => {
   const [error, setError]             = useState<string | null>(null)
 
   useEffect(() => {
-    getDoc(doc(db, 'settings', 'general')).then(snap => {
-      if (snap.exists()) {
-        const data = snap.data() as StoreSettings
+    fetchSettings().then(data => {
+      if (data) {
         setFormData({
           storeName:   data.storeName   ?? '',
           description: data.description ?? '',
@@ -67,8 +67,7 @@ const Settings = () => {
     setFormData(prev => ({ ...prev, social: { ...prev.social, [field]: value } }))
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Reset inactivity timer after returning from OS file picker
-    document.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    resetTimer()
     const file = e.target.files?.[0]
     if (!file) return
     setLogoFile(file)
@@ -83,21 +82,14 @@ const Settings = () => {
     try {
       let logoUrl = currentLogoUrl
       if (logoFile) {
-        const ext = logoFile.name.split('.').pop()
-        const storageRef = ref(storage, `logos/store-logo.${ext}`)
-        await uploadBytes(storageRef, logoFile)
-        logoUrl = await getDownloadURL(storageRef)
+        logoUrl = await uploadLogo(logoFile)
         setCurrentLogoUrl(logoUrl)
         setLogoFile(null)
         setLogoPreview(null)
         setFileInputKey(k => k + 1)
       }
 
-      await setDoc(
-        doc(db, 'settings', 'general'),
-        { ...formData, logoUrl, updatedAt: serverTimestamp() },
-        { merge: true }
-      )
+      await saveSettings(formData, logoUrl)
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
