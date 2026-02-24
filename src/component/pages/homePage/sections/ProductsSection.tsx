@@ -1,4 +1,4 @@
-import { Link, Outlet } from "react-router-dom"
+import { Link } from "react-router-dom"
 import useCollection from "../../../../hooks/useCollection"
 import ProductCard from "../../../../ui/cards/ProductCard"
 import type { Product } from "../../../../types/admin"
@@ -28,8 +28,6 @@ const ProductsSection = () => {
         <h2 style={{ fontWeight: 800, fontSize: '1.6rem', color: 'var(--vsm-black)', marginBottom: '1.75rem' }}>
           Nuestros Productos
         </h2>
-
-        <Outlet />
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">

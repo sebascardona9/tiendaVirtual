@@ -9,6 +9,7 @@ export interface Product {
   categoryId: string
   imageUrl: string
   images?: string[]   // array de 1-5 URLs; si existe toma precedencia sobre imageUrl
+  aroma?: string
   createdAt: Timestamp
   updatedAt: Timestamp
 }

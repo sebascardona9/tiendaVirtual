@@ -6,7 +6,7 @@ import Menu from "./component/pages/menu/Menu";
 import Footer from "./component/pages/footer/Footer";
 import './App.css'
 import Layout from "./component/pages/layout/Layout";
-import Juguetedetalle from "./component/pages/juguetes/JugueteDetalle";
+import ProductDetail from "./component/pages/producto/ProductDetail";
 import AdminPanel from "./component/pages/admin/Admin";
 import ProtecterRouter from "./component/auth/ProtecterRouter";
 
@@ -24,9 +24,8 @@ function App() {
           <Layout>
             <Routes>
               <Route path="/" element={<HomePage/>}/>
-              <Route path="/juguetes" element={<HomePage/>}>
-                <Route path=":slug" element={<Juguetedetalle/>} />
-              </Route>
+              <Route path="/juguetes" element={<HomePage/>}/>
+              <Route path="/producto/:id" element={<ProductDetail/>}/>
               <Route path="/Login" element={<Login/>} />
               <Route path="/Register" element={<Register/>} />
               <Route path="/Admin" element={

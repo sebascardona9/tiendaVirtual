@@ -95,7 +95,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(product.price)}
         </p>
         <Link
-          to={`/juguetes/${product.id}`}
+          to={`/producto/${product.id}`}
           style={{
             display: 'block', textAlign: 'center',
             backgroundColor: product.stock === 0 ? 'var(--vsm-gray-mid)' : 'var(--vsm-brand)',

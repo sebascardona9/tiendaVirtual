@@ -43,13 +43,13 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 |------|-----------|-----------|
 | `/` | `HomePage` | No |
 | `/juguetes` | `HomePage` | No |
-| `/juguetes/:slug` | `JugueteDetalle` | No (nested route con Outlet) |
+| `/producto/:id` | `ProductDetail` | No |
 | `/Login` | `Login` | No |
 | `/Register` | `Register` | No |
-| `/Crear` | `ToyCreate` | No |
 | `/Admin` | `AdminPanel` | Sí — `ProtecterRouter` |
 
 > La ruta `/Logout` fue eliminada. El logout es una acción, no una página.
+> La ruta `/juguetes/:slug` (nested route con Outlet) fue eliminada — reemplazada por `/producto/:id`.
 
 ### Auth system (`src/component/auth/`)
 
@@ -64,7 +64,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 
 **Regla importante:** ningún componente debe importar Firebase directamente para hacer logout. Siempre usar `const { logout } = useAuth()`.
 
-### Layout (`src/component/pages/layaut/Layout.tsx`)
+### Layout (`src/component/pages/layout/Layout.tsx`)
 - Aplica `marginTop: 96px` a todas las páginas para compensar el nav fijo
 - Para la ruta `/` no aplica `px-4` ni `items-center`, permitiendo secciones a ancho completo
 - Para el resto de rutas aplica `items-center px-4`
@@ -82,7 +82,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 |---------|---------|
 | `HeroSection.tsx` | Gradiente oscuro cálido, texto blanco, CTA "Comprar ahora" |
 | `CategoryCards.tsx` | "Conoce nuestras Velas" — 2 tarjetas de categoría |
-| `ProductsSection.tsx` | "Nuestros Productos" — `<CardJuguete/>` + `<Outlet/>` |
+| `ProductsSection.tsx` | "Nuestros Productos" — grid de `<ProductCard/>` con skeleton loader |
 | `CandleTypesSection.tsx` | "Tipos de Velas" — 4 categorías en grid |
 | `ReviewsSection.tsx` | "Lo que dicen nuestros clientes" — 3 testimonios |
 | `NewsletterSection.tsx` | "Regístrate y obtén 10% OFF" — formulario email |
@@ -98,25 +98,24 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Register redirige a `/Login` tras registro exitoso
 
 ### Data layer — Catálogo público
-El catálogo ya conecta a Firestore. `JuguetesData.tsx` es archivo legacy protegido (no se usa).
 
 **`src/ui/cards/ProductCard.tsx`** — tarjeta del catálogo:
 - Lee `product.images[]`; si no existe usa `product.imageUrl` como fallback
 - Crossfade al hover si hay ≥ 2 imágenes (opacity transition 0.4s)
 - Badge "Agotado" si `stock === 0`; botón deshabilitado
-- Link a `/juguetes/${product.id}`
+- Link a `/producto/${product.id}`
 
-**`src/component/pages/juguetes/JugueteDetalle.tsx`** — página de detalle:
-- `getDoc(doc(db,'products', id))` donde `id` viene de `useParams().slug`
-- Imagen principal con zoom (scale 1.08) al hover + fade 150ms al cambiar
-- Miniaturas horizontales scrolleables (ocultas si solo hay 1 imagen)
-- Miniatura activa con borde `var(--vsm-brand)`
+**`src/component/pages/producto/ProductDetail.tsx`** — página de detalle dedicada:
+- Ruta propia `/producto/:id`; obtiene el ID de `useParams()`
+- `Promise.all` para cargar producto + categorías desde Firestore en paralelo
+- Columna izquierda (60%): imagen principal con zoom (scale 1.08) al hover + fade 150ms al cambiar, miniaturas horizontales scrolleables (ocultas si solo hay 1 imagen), miniatura activa con borde `var(--vsm-brand)`
+- Columna derecha (40%): badge categoría, nombre, precio, descripción, bloque aroma (si `product.aroma` existe), selector de cantidad, botón "Agregar al carrito", info de envío
+- Skeleton loader mientras carga; página 404 amigable si el producto no existe
+- Responsive: columnas apiladas en móvil (`grid-cols-1` → `grid-cols-[3fr_2fr]`)
+- Botón "Volver al catálogo" enlaza a `/juguetes`
 
 **`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
-
-### UI components (`src/IU/`)
-- `bottons/Botton.tsx` — botón de marca (`--vsm-brand` bg, blanco, uppercase)
-- `cards/juguete.tsx` — grid 2×3 de tarjetas estilo velasdelafe: badge Nuevo/Especial, nombre, precio en COP, botón "Añadir al carrito"
+**`Product.aroma?: string`** — campo opcional; si existe se muestra en el detalle del producto
 
 ### Footer (`src/component/pages/footer/`)
 4 columnas: Logo + Sobre Nosotros | Nuestras Políticas | Más Información | Newsletter inline.
@@ -144,7 +143,7 @@ Panel completo con 3 secciones accesible en `/#/Admin` (protegida por `Protecter
 - Dos `onSnapshot`: products + categories (para resolver `categoryId` → nombre)
 - Tabs: "Productos" | "Categorías" (tipo `ProductsTab`)
 - Tabla paginada: `ITEMS_PER_PAGE = 10`, reset página cuando cambia la lista
-- Columnas: imagen (48px con fallback 🕯️), nombre, categoría, precio COP, stock (rojo si 0), acciones
+- Columnas: imagen (48px con fallback), nombre, categoría, precio COP, stock (rojo si 0), acciones
 - "Nuevo Producto" → `ProductForm` sin `product`; "Editar" → `ProductForm` con `product`; "Eliminar" → `ConfirmDialog`
 
 ### Formulario producto — `products/ProductForm.tsx`
@@ -183,7 +182,7 @@ Exports: `auth`, `db`, `storage`.
 ### Colecciones Firestore
 | Colección | Campos clave |
 |-----------|-------------|
-| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `imageUrl`, `createdAt`, `updatedAt` |
+| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `imageUrl`, `images?`, `aroma?`, `createdAt`, `updatedAt` |
 | `categories` | `name`, `createdAt` |
 | `settings/general` | `storeName`, `logoUrl`, `description`, `email`, `phone`, `social`, `updatedAt` |
 
@@ -262,13 +261,9 @@ Interfaces centralizadas: `Product`, `Category`, `SocialLinks`, `StoreSettings`,
 ## Pendiente (próximas sesiones)
 - Gestión de pedidos / carrito
 - `browserSessionPersistence` para el panel admin
-- Gestión de pedidos / carrito
 
 ## Archivos que NO se modifican
-`App.tsx`, `Layout.tsx`, `authContext.tsx`, `ProtecterRouter.tsx`, `Footer.tsx`,
-`JuguetesData.tsx`, `CardJuguete.tsx`, `Login.tsx`, `index.css`
-
-> `HomePage.tsx` ya no está protegido — ahora es un orquestador de 6 secciones en `homePage/sections/`
+`authContext.tsx`, `ProtecterRouter.tsx`, `Footer.tsx`, `Login.tsx`, `index.css`
 
 ## Deployment
 
