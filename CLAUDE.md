@@ -194,7 +194,8 @@ Exports: `auth`, `db`, `storage`.
 ```
 match /settings/{id}   { allow read: if true; allow write: if request.auth != null; }
 match /products/{id}   { allow read: if true; allow write: if request.auth != null; }
-match /categories/{id} { allow read: if true; allow write: if request.auth != null; }
+match /categories/{id}    { allow read: if true; allow write: if request.auth != null; }
+match /subcategories/{id} { allow read: if true; allow write: if request.auth != null; }
 ```
 
 ### Reglas Storage

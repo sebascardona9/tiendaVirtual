@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   collection, addDoc, updateDoc, doc, serverTimestamp,
 } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../../../firebase/firebase.config'
-import type { Product, Category, ProductFormData } from '../../../../types/admin'
+import type { Product, Category, Subcategory, ProductFormData } from '../../../../types/admin'
 import AdminModal from '../shared/AdminModal'
 import useFilePickerReset from '../../../../hooks/useFilePickerReset'
 
@@ -15,10 +15,12 @@ interface ProductFormProps {
   onClose: () => void
   product?: Product
   categories: Category[]
+  subcategories: Subcategory[]
 }
 
 const emptyForm: ProductFormData = {
-  name: '', description: '', price: '', stock: '', categoryId: '', imageUrl: '',
+  name: '', description: '', price: '', stock: '',
+  categoryId: '', subcategoryId: '', imageUrl: '', active: true,
 }
 
 const inputStyle: React.CSSProperties = {
@@ -51,31 +53,30 @@ const removeBtn: React.CSSProperties = {
   fontFamily: 'inherit', lineHeight: 1, padding: 0,
 }
 
-const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps) => {
+const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: ProductFormProps) => {
   const resetTimer = useFilePickerReset()
 
-  const [formData, setFormData]       = useState<ProductFormData>(emptyForm)
-  // committed image URLs (already in Firestore or added via URL input)
-  const [images, setImages]           = useState<string[]>([])
-  // files selected but not yet uploaded
+  const [formData, setFormData]         = useState<ProductFormData>(emptyForm)
+  const [images, setImages]             = useState<string[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [urlInput, setUrlInput]       = useState('')
+  const [urlInput, setUrlInput]         = useState('')
   const [fileInputKey, setFileInputKey] = useState(0)
-  const [error, setError]             = useState<string | null>(null)
-  const [loading, setLoading]         = useState(false)
+  const [error, setError]               = useState<string | null>(null)
+  const [loading, setLoading]           = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       setFormData(product ? {
-        name:        product.name,
-        description: product.description,
-        price:       product.price,
-        stock:       product.stock,
-        categoryId:  product.categoryId,
-        imageUrl:    product.imageUrl,
+        name:          product.name,
+        description:   product.description,
+        price:         product.price,
+        stock:         product.stock,
+        categoryId:    product.categoryId,
+        subcategoryId: product.subcategoryId ?? '',
+        imageUrl:      product.imageUrl,
+        active:        product.active !== false,
       } : emptyForm)
 
-      // Normalize existing images
       const existing = product?.images?.length
         ? product.images
         : product?.imageUrl
@@ -89,8 +90,14 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
     }
   }, [isOpen, product])
 
-  const set = (field: keyof ProductFormData, value: string | number) =>
+  const set = (field: keyof ProductFormData, value: string | number | boolean) =>
     setFormData(prev => ({ ...prev, [field]: value }))
+
+  // Active subcategories filtered by the selected category
+  const filteredSubs = useMemo(
+    () => subcategories.filter(s => s.categoryId === formData.categoryId && s.active),
+    [subcategories, formData.categoryId],
+  )
 
   const totalCount = images.length + pendingFiles.length
   const canAddMore = totalCount < MAX_IMAGES
@@ -128,12 +135,20 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
     setLoading(true)
     setError(null)
     try {
+      // Resolve denormalized names
+      const selectedCat = categories.find(c => c.id === formData.categoryId)
+      const selectedSub = filteredSubs.find(s => s.id === formData.subcategoryId)
+
       const base = {
-        name:        formData.name.trim(),
-        description: formData.description.trim(),
-        price:       Number(formData.price) || 0,
-        stock:       Number(formData.stock) || 0,
-        categoryId:  formData.categoryId,
+        name:             formData.name.trim(),
+        description:      formData.description.trim(),
+        price:            Number(formData.price) || 0,
+        stock:            Number(formData.stock) || 0,
+        categoryId:       formData.categoryId,
+        categoryName:     selectedCat?.name ?? '',
+        subcategoryId:    formData.subcategoryId || null,
+        subcategoryName:  selectedSub?.name ?? null,
+        active:           formData.active,
       }
 
       if (product) {
@@ -257,13 +272,50 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
             <label style={labelStyle}>Categoría</label>
             <select
               value={formData.categoryId}
-              onChange={e => set('categoryId', e.target.value)}
+              onChange={e => {
+                set('categoryId', e.target.value)
+                setFormData(prev => ({ ...prev, categoryId: e.target.value, subcategoryId: '' }))
+              }}
               style={{ ...inputStyle, cursor: 'pointer' }}
               onFocus={focusBrand} onBlur={blurGray}
             >
               <option value="">Sin categoría</option>
-              {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {categories.filter(c => c.active).map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
             </select>
+          </div>
+
+          {/* Subcategoría (condicional) */}
+          {filteredSubs.length > 0 && (
+            <div>
+              <label style={labelStyle}>Subcategoría</label>
+              <select
+                value={formData.subcategoryId}
+                onChange={e => set('subcategoryId', e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+                onFocus={focusBrand} onBlur={blurGray}
+              >
+                <option value="">Sin subcategoría</option>
+                {filteredSubs.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Activo */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <input
+              id="product-active"
+              type="checkbox"
+              checked={formData.active}
+              onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+              style={{ width: 16, height: 16, cursor: 'pointer', accentColor: 'var(--vsm-brand)' }}
+            />
+            <label htmlFor="product-active" style={{ ...labelStyle, margin: 0, cursor: 'pointer', fontWeight: 600 }}>
+              Producto activo (visible en el catálogo)
+            </label>
           </div>
 
           {/* ── Imágenes ── */}
@@ -275,7 +327,6 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
               </span>
             </label>
 
-            {/* Previews */}
             {totalCount > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '0.75rem' }}>
                 {images.map((url, i) => (
@@ -330,7 +381,6 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
               </div>
             )}
 
-            {/* Agregar por URL */}
             {canAddMore && (
               <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <input
@@ -358,7 +408,6 @@ const ProductForm = ({ isOpen, onClose, product, categories }: ProductFormProps)
               </div>
             )}
 
-            {/* Subir archivo */}
             {canAddMore && (
               <div>
                 <p style={{ fontSize: '11px', color: 'var(--vsm-gray-mid)', marginBottom: '4px' }}>

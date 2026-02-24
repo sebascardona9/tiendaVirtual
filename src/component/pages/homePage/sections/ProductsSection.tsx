@@ -22,6 +22,9 @@ const SkeletonCard = () => (
 const ProductsSection = () => {
   const { data: products, loading } = useCollection<Product>('products')
 
+  // Backwards-compatible filter: products without 'active' field still show
+  const visibleProducts = products.filter(p => p.active !== false)
+
   return (
     <section style={{ backgroundColor: 'var(--vsm-bg)' }} className="py-20 px-8">
       <div className="max-w-7xl mx-auto">
@@ -33,14 +36,14 @@ const ProductsSection = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
-        ) : products.length === 0 ? (
+        ) : visibleProducts.length === 0 ? (
           <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '14px' }}>
             No hay productos disponibles aún.
           </p>
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-5">
-              {products.map(p => <ProductCard key={p.id} product={p} />)}
+              {visibleProducts.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
             <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
               <Link

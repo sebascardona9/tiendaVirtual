@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
-import { deleteDoc, doc } from 'firebase/firestore'
+import { updateDoc, doc } from 'firebase/firestore'
 import { db } from '../../../../firebase/firebase.config'
-import type { Product, Category, ProductsTab } from '../../../../types/admin'
+import type { Product, Category, Subcategory, ProductsTab } from '../../../../types/admin'
 import useCollection from '../../../../hooks/useCollection'
 import ProductForm from './ProductForm'
 import CategoryList from './CategoryList'
@@ -10,35 +10,53 @@ import ConfirmDialog from '../shared/ConfirmDialog'
 const ITEMS_PER_PAGE = 10
 
 const ProductList = () => {
-  const { data: products }   = useCollection<Product>('products')
-  const { data: categories } = useCollection<Category>('categories')
+  const { data: products }      = useCollection<Product>('products')
+  const { data: categories }    = useCollection<Category>('categories')
+  const { data: subcategories } = useCollection<Subcategory>('subcategories')
 
-  const [activeTab, setActiveTab]   = useState<ProductsTab>('productos')
-  const [page, setPage]             = useState(1)
-  // Reset to first page whenever the product list changes
+  const [activeTab, setActiveTab]     = useState<ProductsTab>('productos')
+  const [page, setPage]               = useState(1)
   useEffect(() => { setPage(1) }, [products])
-  const [showForm, setShowForm]     = useState(false)
-  const [editProduct, setEditProduct]   = useState<Product | undefined>()
+  const [showForm, setShowForm]       = useState(false)
+  const [editProduct, setEditProduct] = useState<Product | undefined>()
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
+  const [toggleLoading, setToggleLoading] = useState<string | null>(null)
 
   const categoryMap = useMemo(
     () => new Map(categories.map(c => [c.id, c.name])),
     [categories],
   )
-  const getCategoryName = (id: string) => categoryMap.get(id) ?? '—'
+
+  const subcategoryMap = useMemo(
+    () => new Map(subcategories.map(s => [s.id, s.name])),
+    [subcategories],
+  )
+
+  const getCategoryName    = (id: string) => categoryMap.get(id) ?? '—'
+  const getSubcategoryName = (id?: string) => id ? (subcategoryMap.get(id) ?? '—') : '—'
 
   const totalPages = Math.max(1, Math.ceil(products.length / ITEMS_PER_PAGE))
   const paginated  = products.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
+  // Soft delete — sets active: false instead of deleting the document
   const handleDelete = async () => {
     if (!deleteTarget) return
     setDeleteLoading(true)
     try {
-      await deleteDoc(doc(db, 'products', deleteTarget.id))
+      await updateDoc(doc(db, 'products', deleteTarget.id), { active: false })
       setDeleteTarget(null)
     } catch { /* silent */ } finally {
       setDeleteLoading(false)
+    }
+  }
+
+  const handleToggleActive = async (p: Product) => {
+    setToggleLoading(p.id)
+    try {
+      await updateDoc(doc(db, 'products', p.id), { active: !(p.active !== false) })
+    } catch { /* silent */ } finally {
+      setToggleLoading(null)
     }
   }
 
@@ -93,7 +111,7 @@ const ProductList = () => {
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ borderBottom: '2px solid var(--vsm-gray)' }}>
-                      {['Imagen','Nombre','Categoría','Precio','Stock','Acciones'].map(h => (
+                      {['Imagen','Nombre','Categoría','Subcategoría','Precio','Stock','Activo','Acciones'].map(h => (
                         <th key={h} style={{ textAlign: 'left', padding: '8px 10px', fontWeight: 700, color: 'var(--vsm-gray-mid)', whiteSpace: 'nowrap' }}>
                           {h}
                         </th>
@@ -101,37 +119,61 @@ const ProductList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {paginated.map(p => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid var(--vsm-gray)' }}>
-                        <td style={{ padding: '8px 10px' }}>
-                          {p.imageUrl ? (
-                            <img src={p.imageUrl} alt={p.name}
-                              style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--vsm-gray)' }} />
-                          ) : (
-                            <span style={{ fontSize: '1.5rem' }}>🕯️</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--vsm-black)' }}>{p.name}</td>
-                        <td style={{ padding: '8px 10px', color: 'var(--vsm-gray-mid)' }}>{getCategoryName(p.categoryId)}</td>
-                        <td style={{ padding: '8px 10px', color: 'var(--vsm-black)' }}>
-                          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(p.price)}
-                        </td>
-                        <td style={{ padding: '8px 10px', fontWeight: p.stock === 0 ? 700 : 400, color: p.stock === 0 ? '#DC2626' : 'var(--vsm-black)' }}>
-                          {p.stock}
-                        </td>
-                        <td style={{ padding: '8px 10px' }}>
-                          <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <button onClick={() => openEdit(p)} style={actionBtn('#E8E8E8', '#111')}>Editar</button>
-                            <button onClick={() => setDeleteTarget(p)} style={actionBtn('#FEF2F2', '#DC2626')}>Eliminar</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {paginated.map(p => {
+                      const isActive = p.active !== false
+                      return (
+                        <tr key={p.id} style={{ borderBottom: '1px solid var(--vsm-gray)', opacity: isActive ? 1 : 0.55 }}>
+                          <td style={{ padding: '8px 10px' }}>
+                            {p.imageUrl ? (
+                              <img src={p.imageUrl} alt={p.name}
+                                style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--vsm-gray)' }} />
+                            ) : (
+                              <span style={{ fontSize: '1.5rem' }}>🕯️</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--vsm-black)' }}>{p.name}</td>
+                          <td style={{ padding: '8px 10px', color: 'var(--vsm-gray-mid)' }}>{getCategoryName(p.categoryId)}</td>
+                          <td style={{ padding: '8px 10px', color: 'var(--vsm-gray-mid)' }}>{getSubcategoryName(p.subcategoryId)}</td>
+                          <td style={{ padding: '8px 10px', color: 'var(--vsm-black)' }}>
+                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(p.price)}
+                          </td>
+                          <td style={{ padding: '8px 10px', fontWeight: p.stock === 0 ? 700 : 400, color: p.stock === 0 ? '#DC2626' : 'var(--vsm-black)' }}>
+                            {p.stock}
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <button
+                              onClick={() => handleToggleActive(p)}
+                              disabled={toggleLoading === p.id}
+                              style={{
+                                padding: '3px 10px',
+                                borderRadius: '12px',
+                                border: 'none',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: toggleLoading === p.id ? 'not-allowed' : 'pointer',
+                                fontFamily: 'inherit',
+                                backgroundColor: isActive ? '#DCFCE7' : '#F5F5F5',
+                                color: isActive ? '#16A34A' : 'var(--vsm-gray-mid)',
+                                opacity: toggleLoading === p.id ? 0.6 : 1,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {isActive ? 'Activo' : 'Inactivo'}
+                            </button>
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              <button onClick={() => openEdit(p)} style={actionBtn('#E8E8E8', '#111')}>Editar</button>
+                              <button onClick={() => setDeleteTarget(p)} style={actionBtn('#FEF2F2', '#DC2626')}>Desactivar</button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              {/* Paginación */}
               {totalPages > 1 && (
                 <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '1rem', alignItems: 'center' }}>
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} style={pageBtn(page === 1)}>‹ Ant</button>
@@ -147,14 +189,15 @@ const ProductList = () => {
             onClose={() => setShowForm(false)}
             product={editProduct}
             categories={categories}
+            subcategories={subcategories}
           />
 
           <ConfirmDialog
             isOpen={!!deleteTarget}
             onClose={() => setDeleteTarget(null)}
             onConfirm={handleDelete}
-            title="Eliminar producto"
-            message={`¿Eliminar "${deleteTarget?.name}"? Esta acción no se puede deshacer.`}
+            title="Desactivar producto"
+            message={`"${deleteTarget?.name}" dejará de aparecer en el catálogo. Puedes reactivarlo desde la columna Activo.`}
             loading={deleteLoading}
           />
         </>
