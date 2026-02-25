@@ -7,6 +7,7 @@ import { db, storage } from '../../../../firebase/firebase.config'
 import type { Product, Category, Subcategory, ProductFormData } from '../../../../types/admin'
 import AdminModal from '../shared/AdminModal'
 import useFilePickerReset from '../../../../hooks/useFilePickerReset'
+import { inputStyle, labelStyle, errorBox, errorText, onFocusBrand, onBlurGray } from '../../../../styles/formStyles'
 
 const MAX_IMAGES = 5
 
@@ -23,30 +24,10 @@ const emptyForm: ProductFormData = {
   categoryId: '', subcategoryId: '', imageUrl: '', active: true,
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '9px 12px',
-  border: '1px solid var(--vsm-gray)',
-  borderRadius: '5px',
-  fontSize: '13px',
-  fontFamily: 'inherit',
-  outline: 'none',
-  color: 'var(--vsm-black)',
-  backgroundColor: 'var(--vsm-white)',
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: 700,
-  color: 'var(--vsm-black)',
-  display: 'block',
-  marginBottom: '5px',
-}
-
 const removeBtn: React.CSSProperties = {
   position: 'absolute', top: -6, right: -6,
   width: 20, height: 20, borderRadius: '50%',
-  backgroundColor: '#DC2626', color: '#fff',
+  backgroundColor: 'var(--vsm-error)', color: '#fff',
   border: 'none', cursor: 'pointer',
   fontSize: '10px', fontWeight: 700,
   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -93,7 +74,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
   const set = (field: keyof ProductFormData, value: string | number | boolean) =>
     setFormData(prev => ({ ...prev, [field]: value }))
 
-  // Active subcategories filtered by the selected category
   const filteredSubs = useMemo(
     () => subcategories.filter(s => s.categoryId === formData.categoryId && s.active),
     [subcategories, formData.categoryId],
@@ -135,7 +115,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
     setLoading(true)
     setError(null)
     try {
-      // Resolve denormalized names
       const selectedCat = categories.find(c => c.id === formData.categoryId)
       const selectedSub = filteredSubs.find(s => s.id === formData.subcategoryId)
 
@@ -152,7 +131,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
       }
 
       if (product) {
-        // ── EDIT ──
         const uploadedUrls: string[] = []
         for (let i = 0; i < pendingFiles.length; i++) {
           try {
@@ -174,7 +152,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
           return
         }
       } else {
-        // ── CREATE ──
         const docRef = await addDoc(collection(db, 'products'), {
           ...base,
           imageUrl:  images[0] ?? '',
@@ -215,11 +192,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
     }
   }
 
-  const focusBrand = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--vsm-brand)')
-  const blurGray = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--vsm-gray)')
-
   return (
     <AdminModal isOpen={isOpen} onClose={onClose} maxWidth="560px">
       <h3 style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--vsm-black)', marginBottom: '1.25rem' }}>
@@ -230,9 +202,9 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
 
           {/* Nombre */}
           <div>
-            <label style={labelStyle}>Nombre <span style={{ color: '#DC2626' }}>*</span></label>
+            <label style={labelStyle}>Nombre <span style={{ color: 'var(--vsm-error)' }}>*</span></label>
             <input value={formData.name} onChange={e => set('name', e.target.value)}
-              style={inputStyle} onFocus={focusBrand} onBlur={blurGray} />
+              style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray} />
           </div>
 
           {/* Descripción */}
@@ -243,7 +215,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
               onChange={e => set('description', e.target.value)}
               rows={3}
               style={{ ...inputStyle, resize: 'vertical' }}
-              onFocus={focusBrand} onBlur={blurGray}
+              onFocus={onFocusBrand} onBlur={onBlurGray}
             />
           </div>
 
@@ -254,7 +226,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
               <input
                 type="number" min="0" value={formData.price} placeholder="0"
                 onChange={e => set('price', e.target.value === '' ? '' : Number(e.target.value))}
-                style={inputStyle} onFocus={focusBrand} onBlur={blurGray}
+                style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray}
               />
             </div>
             <div>
@@ -262,7 +234,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
               <input
                 type="number" min="0" value={formData.stock} placeholder="0"
                 onChange={e => set('stock', e.target.value === '' ? '' : Number(e.target.value))}
-                style={inputStyle} onFocus={focusBrand} onBlur={blurGray}
+                style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray}
               />
             </div>
           </div>
@@ -277,7 +249,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
                 setFormData(prev => ({ ...prev, categoryId: e.target.value, subcategoryId: '' }))
               }}
               style={{ ...inputStyle, cursor: 'pointer' }}
-              onFocus={focusBrand} onBlur={blurGray}
+              onFocus={onFocusBrand} onBlur={onBlurGray}
             >
               <option value="">Sin categoría</option>
               {categories.filter(c => c.active).map(c => (
@@ -294,7 +266,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
                 value={formData.subcategoryId}
                 onChange={e => set('subcategoryId', e.target.value)}
                 style={{ ...inputStyle, cursor: 'pointer' }}
-                onFocus={focusBrand} onBlur={blurGray}
+                onFocus={onFocusBrand} onBlur={onBlurGray}
               >
                 <option value="">Sin subcategoría</option>
                 {filteredSubs.map(s => (
@@ -336,7 +308,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
                       alt={`Imagen ${i + 1}`}
                       style={{
                         width: 72, height: 72, objectFit: 'cover',
-                        borderRadius: '5px',
+                        borderRadius: 'var(--vsm-radius-sm)',
                         border: i === 0
                           ? '2px solid var(--vsm-brand)'
                           : '1px solid var(--vsm-gray)',
@@ -363,7 +335,7 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
                       alt={file.name}
                       style={{
                         width: 72, height: 72, objectFit: 'cover',
-                        borderRadius: '5px',
+                        borderRadius: 'var(--vsm-radius-sm)',
                         border: '2px dashed var(--vsm-brand)',
                       }}
                     />
@@ -389,14 +361,14 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
                   onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addUrlImage() } }}
                   placeholder="https://... pegar URL de imagen"
                   style={{ ...inputStyle, flex: 1 }}
-                  onFocus={focusBrand} onBlur={blurGray}
+                  onFocus={onFocusBrand} onBlur={onBlurGray}
                 />
                 <button
                   type="button"
                   onClick={addUrlImage}
                   disabled={!urlInput.trim()}
                   style={{
-                    padding: '9px 14px', borderRadius: '5px', border: 'none',
+                    padding: '9px 14px', borderRadius: 'var(--vsm-radius-sm)', border: 'none',
                     backgroundColor: urlInput.trim() ? 'var(--vsm-brand)' : 'var(--vsm-gray)',
                     color: '#fff', fontSize: '12px', fontWeight: 700,
                     cursor: urlInput.trim() ? 'pointer' : 'not-allowed',
@@ -433,19 +405,19 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
 
           {/* Error */}
           {error && (
-            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '5px', padding: '10px 14px' }}>
-              <p style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{error}</p>
+            <div style={errorBox}>
+              <p style={errorText}>{error}</p>
             </div>
           )}
 
           {/* Actions */}
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem' }}>
             <button type="button" onClick={onClose} disabled={loading}
-              style={{ padding: '9px 20px', borderRadius: '5px', border: '1px solid var(--vsm-gray)', backgroundColor: 'var(--vsm-white)', color: 'var(--vsm-gray-mid)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ padding: '9px 20px', borderRadius: 'var(--vsm-radius-sm)', border: '1px solid var(--vsm-gray)', backgroundColor: 'var(--vsm-white)', color: 'var(--vsm-gray-mid)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
               Cancelar
             </button>
             <button type="submit" disabled={loading}
-              style={{ padding: '9px 20px', borderRadius: '5px', border: 'none', backgroundColor: 'var(--vsm-brand)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.75 : 1, fontFamily: 'inherit' }}>
+              style={{ padding: '9px 20px', borderRadius: 'var(--vsm-radius-sm)', border: 'none', backgroundColor: 'var(--vsm-brand)', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.75 : 1, fontFamily: 'inherit' }}>
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </div>

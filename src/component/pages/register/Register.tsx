@@ -2,35 +2,15 @@ import React from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth"
 import { auth } from "../../../firebase/firebase.config"
-
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1px solid var(--vsm-gray)',
-    borderRadius: '5px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    outline: 'none',
-    color: 'var(--vsm-black)',
-    backgroundColor: 'var(--vsm-white)',
-    transition: 'border-color 0.2s',
-}
-
-const labelStyle: React.CSSProperties = {
-    fontSize: '13px',
-    fontWeight: 700,
-    color: 'var(--vsm-black)',
-    display: 'block',
-    marginBottom: '6px',
-}
+import { inputStyle, labelStyle, errorBox, errorText, primaryBtn, onFocusBrand, onBlurGray } from "../../../styles/formStyles"
 
 const Register = () => {
-    const [userName, setUserName]         = React.useState("")
-    const [userMail, setUserMail]         = React.useState("")
-    const [userPassword, setUserPassword] = React.useState("")
+    const [userName, setUserName]               = React.useState("")
+    const [userMail, setUserMail]               = React.useState("")
+    const [userPassword, setUserPassword]       = React.useState("")
     const [confirmPassword, setConfirmPassword] = React.useState("")
-    const [errorMsg, setErrorMsg]         = React.useState<string | null>(null)
-    const [loading, setLoading]           = React.useState(false)
+    const [errorMsg, setErrorMsg]               = React.useState<string | null>(null)
+    const [loading, setLoading]                 = React.useState(false)
     const navigate = useNavigate()
 
     const handleRegister = async (e: React.FormEvent) => {
@@ -76,8 +56,8 @@ const Register = () => {
             <div
                 style={{
                     backgroundColor: 'var(--vsm-white)',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.09)',
+                    borderRadius: 'var(--vsm-radius)',
+                    boxShadow: 'var(--vsm-shadow-card)',
                     padding: '2.5rem',
                     width: '100%',
                     maxWidth: '420px',
@@ -101,15 +81,15 @@ const Register = () => {
                     {/* Nombre */}
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label htmlFor="name" style={labelStyle}>
-                            Nombre completo <span style={{ color: '#DC2626' }}>*</span>
+                            Nombre completo <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="text"
                             id="name"
                             value={userName}
                             onChange={(e) => setUserName(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -118,15 +98,15 @@ const Register = () => {
                     {/* Email */}
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label htmlFor="email" style={labelStyle}>
-                            Correo electrónico <span style={{ color: '#DC2626' }}>*</span>
+                            Correo electrónico <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="email"
                             id="email"
                             value={userMail}
                             onChange={(e) => setUserMail(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -135,15 +115,15 @@ const Register = () => {
                     {/* Contraseña */}
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label htmlFor="password" style={labelStyle}>
-                            Contraseña <span style={{ color: '#DC2626' }}>*</span>
+                            Contraseña <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="password"
                             id="password"
                             value={userPassword}
                             onChange={(e) => setUserPassword(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -155,15 +135,15 @@ const Register = () => {
                     {/* Confirmar contraseña */}
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label htmlFor="confirmPassword" style={labelStyle}>
-                            Confirmar contraseña <span style={{ color: '#DC2626' }}>*</span>
+                            Confirmar contraseña <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="password"
                             id="confirmPassword"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -187,16 +167,8 @@ const Register = () => {
 
                     {/* Error */}
                     {errorMsg && (
-                        <div
-                            style={{
-                                backgroundColor: '#FEF2F2',
-                                border: '1px solid #FECACA',
-                                borderRadius: '5px',
-                                padding: '10px 14px',
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            <p style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{errorMsg}</p>
+                        <div style={{ ...errorBox, marginBottom: '1rem' }}>
+                            <p style={errorText}>{errorMsg}</p>
                         </div>
                     )}
 
@@ -205,20 +177,9 @@ const Register = () => {
                         type="submit"
                         disabled={loading}
                         style={{
-                            width: '100%',
-                            backgroundColor: 'var(--vsm-brand)',
-                            color: '#fff',
-                            padding: '12px',
-                            borderRadius: '5px',
-                            border: 'none',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.07em',
+                            ...primaryBtn,
                             cursor: loading ? 'not-allowed' : 'pointer',
                             opacity: loading ? 0.75 : 1,
-                            transition: 'opacity 0.2s',
-                            fontFamily: 'inherit',
                         }}
                     >
                         {loading ? 'Creando cuenta...' : 'Registrarme'}

@@ -20,49 +20,14 @@ import {
 import ConfirmDialog from '../shared/ConfirmDialog'
 import AdminModal from '../shared/AdminModal'
 import useCollection from '../../../../hooks/useCollection'
-
-// ─── ToggleSwitch ────────────────────────────────────────────────────────────
-const ToggleSwitch = ({ active, onChange, disabled }: {
-  active: boolean
-  onChange: () => void
-  disabled?: boolean
-}) => (
-  <button
-    type="button"
-    onClick={onChange}
-    disabled={disabled}
-    aria-label={active ? 'Desactivar' : 'Activar'}
-    style={{
-      width: 36, height: 20,
-      borderRadius: 10,
-      border: 'none',
-      backgroundColor: active ? 'var(--vsm-brand)' : 'var(--vsm-gray)',
-      position: 'relative',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      flexShrink: 0,
-      transition: 'background-color 0.2s',
-      opacity: disabled ? 0.6 : 1,
-      padding: 0,
-    }}
-  >
-    <span style={{
-      position: 'absolute',
-      top: 2,
-      left: active ? 18 : 2,
-      width: 16, height: 16,
-      borderRadius: '50%',
-      backgroundColor: '#fff',
-      transition: 'left 0.2s',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
-    }} />
-  </button>
-)
+import ToggleSwitch from '../../../../ui/shared/ToggleSwitch'
+import { onFocusBrand, onBlurGray } from '../../../../styles/formStyles'
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const inputStyle: React.CSSProperties = {
   padding: '7px 10px',
   border: '1px solid var(--vsm-gray)',
-  borderRadius: '5px',
+  borderRadius: 'var(--vsm-radius-sm)',
   fontSize: '13px',
   fontFamily: 'inherit',
   outline: 'none',
@@ -356,16 +321,16 @@ const CategoryList = () => {
             onKeyDown={e => { if (e.key === 'Enter') handleAddCategory() }}
             placeholder="Nombre *"
             style={{ ...inputStyle, minWidth: 160 }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-            onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+            onFocus={onFocusBrand}
+            onBlur={onBlurGray}
           />
           <input
             value={newDesc}
             onChange={e => setNewDesc(e.target.value)}
             placeholder="Descripción (opcional)"
             style={{ ...inputStyle, minWidth: 200 }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-            onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+            onFocus={onFocusBrand}
+            onBlur={onBlurGray}
           />
           <button
             onClick={handleAddCategory}
@@ -380,7 +345,7 @@ const CategoryList = () => {
             {addLoading ? 'Agregando...' : 'Agregar'}
           </button>
         </div>
-        {addError && <p style={{ color: '#DC2626', fontSize: '12px', marginTop: '0.4rem' }}>{addError}</p>}
+        {addError && <p style={{ color: 'var(--vsm-error)', fontSize: '12px', marginTop: '0.4rem' }}>{addError}</p>}
       </div>
 
       {/* ── Category list ── */}
@@ -419,8 +384,8 @@ const CategoryList = () => {
                         onChange={e => { setEditCatName(e.target.value); setEditCatError(null) }}
                         onKeyDown={e => { if (e.key === 'Enter') handleEditCat(cat) }}
                         style={{ ...inputStyle, maxWidth: 200 }}
-                        onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                        onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                        onFocus={onFocusBrand}
+                        onBlur={onBlurGray}
                         autoFocus
                       />
                       <input
@@ -428,10 +393,10 @@ const CategoryList = () => {
                         onChange={e => setEditCatDesc(e.target.value)}
                         placeholder="Descripción"
                         style={{ ...inputStyle, maxWidth: 220 }}
-                        onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                        onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                        onFocus={onFocusBrand}
+                        onBlur={onBlurGray}
                       />
-                      {editCatError && <span style={{ color: '#DC2626', fontSize: '11px' }}>{editCatError}</span>}
+                      {editCatError && <span style={{ color: 'var(--vsm-error)', fontSize: '11px' }}>{editCatError}</span>}
                       <button onClick={() => handleEditCat(cat)} disabled={editCatLoading}
                         style={{ ...btnStyle, backgroundColor: 'var(--vsm-brand)', color: '#fff', opacity: editCatLoading ? 0.75 : 1, cursor: editCatLoading ? 'not-allowed' : 'pointer' }}>
                         {editCatLoading ? '...' : 'Guardar'}
@@ -479,7 +444,7 @@ const CategoryList = () => {
                         Editar
                       </button>
                       <button onClick={() => handleDeleteCatClick(cat)}
-                        style={{ ...btnStyle, backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', cursor: 'pointer' }}>
+                        style={{ ...btnStyle, backgroundColor: 'var(--vsm-error-bg)', color: 'var(--vsm-error)', border: '1px solid var(--vsm-error-border)', cursor: 'pointer' }}>
                         Eliminar
                       </button>
                     </>
@@ -517,8 +482,8 @@ const CategoryList = () => {
                                           onKeyDown={e => { if (e.key === 'Enter') handleEditSub(sub) }}
                                           placeholder="Nombre"
                                           style={{ ...inputStyle, maxWidth: 180 }}
-                                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                                          onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                                          onFocus={onFocusBrand}
+                                          onBlur={onBlurGray}
                                           autoFocus
                                         />
                                         <input
@@ -526,10 +491,10 @@ const CategoryList = () => {
                                           onChange={e => setEditSubDesc(e.target.value)}
                                           placeholder="Descripción"
                                           style={{ ...inputStyle, maxWidth: 200 }}
-                                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                                          onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                                          onFocus={onFocusBrand}
+                                          onBlur={onBlurGray}
                                         />
-                                        {editSubError && <span style={{ color: '#DC2626', fontSize: '11px' }}>{editSubError}</span>}
+                                        {editSubError && <span style={{ color: 'var(--vsm-error)', fontSize: '11px' }}>{editSubError}</span>}
                                         <button onClick={() => handleEditSub(sub)} disabled={editSubLoading}
                                           style={{ ...btnStyle, backgroundColor: 'var(--vsm-brand)', color: '#fff', opacity: editSubLoading ? 0.75 : 1, cursor: editSubLoading ? 'not-allowed' : 'pointer' }}>
                                           {editSubLoading ? '...' : 'Guardar'}
@@ -559,7 +524,7 @@ const CategoryList = () => {
                                             Editar
                                           </button>
                                           <button onClick={() => handleDeleteSubClick(sub)}
-                                            style={{ ...btnStyle, backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', cursor: 'pointer', padding: '3px 8px' }}>
+                                            style={{ ...btnStyle, backgroundColor: 'var(--vsm-error-bg)', color: 'var(--vsm-error)', border: '1px solid var(--vsm-error-border)', cursor: 'pointer', padding: '3px 8px' }}>
                                             Eliminar
                                           </button>
                                         </div>
@@ -584,16 +549,16 @@ const CategoryList = () => {
                           onKeyDown={e => { if (e.key === 'Enter') handleAddSub(cat) }}
                           placeholder="Nombre *"
                           style={{ ...inputStyle, maxWidth: 180, fontSize: '12px', padding: '5px 8px' }}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                          onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                          onFocus={onFocusBrand}
+                          onBlur={onBlurGray}
                         />
                         <input
                           value={newSubDesc[cat.id] ?? ''}
                           onChange={e => setNewSubDesc(p => ({ ...p, [cat.id]: e.target.value }))}
                           placeholder="Descripción (opcional)"
                           style={{ ...inputStyle, maxWidth: 220, fontSize: '12px', padding: '5px 8px' }}
-                          onFocus={e => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                          onBlur={e  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                          onFocus={onFocusBrand}
+                          onBlur={onBlurGray}
                         />
                         <button
                           onClick={() => handleAddSub(cat)}
@@ -610,7 +575,7 @@ const CategoryList = () => {
                         </button>
                       </div>
                       {addSubError[cat.id] && (
-                        <p style={{ color: '#DC2626', fontSize: '11px', marginTop: '0.3rem' }}>{addSubError[cat.id]}</p>
+                        <p style={{ color: 'var(--vsm-error)', fontSize: '11px', marginTop: '0.3rem' }}>{addSubError[cat.id]}</p>
                       )}
                     </div>
                   </div>

@@ -24,7 +24,7 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, loading }: 
           disabled={loading}
           style={{
             padding: '9px 20px',
-            borderRadius: '5px',
+            borderRadius: 'var(--vsm-radius-sm)',
             border: '1px solid var(--vsm-gray)',
             backgroundColor: 'var(--vsm-white)',
             color: 'var(--vsm-gray-mid)',
@@ -41,9 +41,9 @@ const ConfirmDialog = ({ isOpen, onClose, onConfirm, title, message, loading }: 
           disabled={loading}
           style={{
             padding: '9px 20px',
-            borderRadius: '5px',
+            borderRadius: 'var(--vsm-radius-sm)',
             border: 'none',
-            backgroundColor: '#DC2626',
+            backgroundColor: 'var(--vsm-error)',
             color: '#fff',
             fontSize: '13px',
             fontWeight: 700,

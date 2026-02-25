@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import type { SettingsFormData } from '../../../../types/admin'
 import { fetchSettings, uploadLogo, saveSettings } from '../../../../services/settingsService'
 import useFilePickerReset from '../../../../hooks/useFilePickerReset'
+import { inputStyle, labelStyle, errorBox, errorText, successBox, successText, onFocusBrand, onBlurGray } from '../../../../styles/formStyles'
 
 const emptyForm: SettingsFormData = {
   storeName: '',
@@ -11,38 +12,18 @@ const emptyForm: SettingsFormData = {
   social: { instagram: '', facebook: '', whatsapp: '', tiktok: '' },
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '9px 12px',
-  border: '1px solid var(--vsm-gray)',
-  borderRadius: '5px',
-  fontSize: '13px',
-  fontFamily: 'inherit',
-  outline: 'none',
-  color: 'var(--vsm-black)',
-  backgroundColor: 'var(--vsm-white)',
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: '12px',
-  fontWeight: 700,
-  color: 'var(--vsm-black)',
-  display: 'block',
-  marginBottom: '5px',
-}
-
 const Settings = () => {
   const resetTimer = useFilePickerReset()
 
-  const [formData, setFormData]       = useState<SettingsFormData>(emptyForm)
+  const [formData, setFormData]             = useState<SettingsFormData>(emptyForm)
   const [currentLogoUrl, setCurrentLogoUrl] = useState('')
-  const [logoFile, setLogoFile]       = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [fileInputKey, setFileInputKey] = useState(0)
-  const [loading, setLoading]         = useState(false)
-  const [fetchLoading, setFetchLoading] = useState(true)
-  const [success, setSuccess]         = useState(false)
-  const [error, setError]             = useState<string | null>(null)
+  const [logoFile, setLogoFile]             = useState<File | null>(null)
+  const [logoPreview, setLogoPreview]       = useState<string | null>(null)
+  const [fileInputKey, setFileInputKey]     = useState(0)
+  const [loading, setLoading]               = useState(false)
+  const [fetchLoading, setFetchLoading]     = useState(true)
+  const [success, setSuccess]               = useState(false)
+  const [error, setError]                   = useState<string | null>(null)
 
   useEffect(() => {
     fetchSettings().then(data => {
@@ -100,11 +81,6 @@ const Settings = () => {
     }
   }
 
-  const focus = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--vsm-brand)')
-  const blur  = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    (e.currentTarget.style.borderColor = 'var(--vsm-gray)')
-
   if (fetchLoading) {
     return <div style={{ color: 'var(--vsm-gray-mid)', fontSize: '13px' }}>Cargando configuración...</div>
   }
@@ -148,7 +124,7 @@ const Settings = () => {
           <div>
             <label style={labelStyle}>Nombre de la tienda</label>
             <input value={formData.storeName} onChange={e => setField('storeName', e.target.value)}
-              style={inputStyle} onFocus={focus} onBlur={blur} />
+              style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray} />
           </div>
 
           {/* Descripción */}
@@ -159,7 +135,7 @@ const Settings = () => {
               onChange={e => setFormData(p => ({ ...p, description: e.target.value }))}
               rows={3}
               style={{ ...inputStyle, resize: 'vertical' }}
-              onFocus={focus} onBlur={blur}
+              onFocus={onFocusBrand} onBlur={onBlurGray}
             />
           </div>
 
@@ -168,12 +144,12 @@ const Settings = () => {
             <div>
               <label style={labelStyle}>Correo de contacto</label>
               <input value={formData.email} onChange={e => setField('email', e.target.value)}
-                type="email" style={inputStyle} onFocus={focus} onBlur={blur} />
+                type="email" style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray} />
             </div>
             <div>
               <label style={labelStyle}>Teléfono / WhatsApp</label>
               <input value={formData.phone} onChange={e => setField('phone', e.target.value)}
-                style={inputStyle} onFocus={focus} onBlur={blur} />
+                style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray} />
             </div>
           </div>
 
@@ -191,7 +167,7 @@ const Settings = () => {
                     onChange={e => setSocial(net, e.target.value)}
                     placeholder={`URL de ${net}`}
                     style={{ ...inputStyle, flex: 1 }}
-                    onFocus={focus} onBlur={blur}
+                    onFocus={onFocusBrand} onBlur={onBlurGray}
                   />
                 </div>
               ))}
@@ -200,13 +176,13 @@ const Settings = () => {
 
           {/* Feedback */}
           {error && (
-            <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '5px', padding: '10px 14px' }}>
-              <p style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{error}</p>
+            <div style={errorBox}>
+              <p style={errorText}>{error}</p>
             </div>
           )}
           {success && (
-            <div style={{ backgroundColor: '#F0FDF4', border: '1px solid #86EFAC', borderRadius: '5px', padding: '10px 14px' }}>
-              <p style={{ color: '#16A34A', fontSize: '13px', fontWeight: 600 }}>Configuración guardada correctamente.</p>
+            <div style={successBox}>
+              <p style={successText}>Configuración guardada correctamente.</p>
             </div>
           )}
 
@@ -217,7 +193,7 @@ const Settings = () => {
             style={{
               alignSelf: 'flex-start',
               backgroundColor: 'var(--vsm-brand)', color: '#fff',
-              border: 'none', borderRadius: '5px', padding: '10px 24px',
+              border: 'none', borderRadius: 'var(--vsm-radius-sm)', padding: '10px 24px',
               fontSize: '13px', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
               opacity: loading ? 0.75 : 1, fontFamily: 'inherit',
             }}

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Product } from '../../types/admin'
+import { formatCOP } from '../../utils/formatters'
 
 interface ProductCardProps {
   product: Product
@@ -24,7 +25,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         backgroundColor: 'var(--vsm-white)',
         borderRadius: '6px',
         overflow: 'hidden',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.07)',
+        boxShadow: 'var(--vsm-shadow)',
       }}
     >
       {/* Imagen con crossfade al hover */}
@@ -32,7 +33,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         style={{
           position: 'relative',
           aspectRatio: '1',
-          backgroundColor: '#F0EBE3',
+          backgroundColor: 'var(--vsm-bg-warm)',
           overflow: 'hidden',
           cursor: hasSecond ? 'pointer' : 'default',
         }}
@@ -43,7 +44,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <span
             style={{
               position: 'absolute', top: '8px', left: '8px', zIndex: 2,
-              backgroundColor: '#DC2626', color: '#fff',
+              backgroundColor: 'var(--vsm-error)', color: '#fff',
               fontSize: '10px', fontWeight: 700, padding: '3px 8px',
               textTransform: 'uppercase', letterSpacing: '0.08em',
               borderRadius: '2px',
@@ -92,7 +93,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           {product.description}
         </p>
         <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--vsm-black)', marginBottom: '12px' }}>
-          {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(product.price)}
+          {formatCOP(product.price)}
         </p>
         <Link
           to={`/producto/${product.id}`}

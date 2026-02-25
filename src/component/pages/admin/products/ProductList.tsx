@@ -6,6 +6,8 @@ import useCollection from '../../../../hooks/useCollection'
 import ProductForm from './ProductForm'
 import CategoryList from './CategoryList'
 import ConfirmDialog from '../shared/ConfirmDialog'
+import ToggleSwitch from '../../../../ui/shared/ToggleSwitch'
+import { formatCOP } from '../../../../utils/formatters'
 
 const ITEMS_PER_PAGE = 10
 
@@ -135,36 +137,22 @@ const ProductList = () => {
                           <td style={{ padding: '8px 10px', color: 'var(--vsm-gray-mid)' }}>{getCategoryName(p.categoryId)}</td>
                           <td style={{ padding: '8px 10px', color: 'var(--vsm-gray-mid)' }}>{getSubcategoryName(p.subcategoryId)}</td>
                           <td style={{ padding: '8px 10px', color: 'var(--vsm-black)' }}>
-                            {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(p.price)}
+                            {formatCOP(p.price)}
                           </td>
-                          <td style={{ padding: '8px 10px', fontWeight: p.stock === 0 ? 700 : 400, color: p.stock === 0 ? '#DC2626' : 'var(--vsm-black)' }}>
+                          <td style={{ padding: '8px 10px', fontWeight: p.stock === 0 ? 700 : 400, color: p.stock === 0 ? 'var(--vsm-error)' : 'var(--vsm-black)' }}>
                             {p.stock}
                           </td>
                           <td style={{ padding: '8px 10px' }}>
-                            <button
-                              onClick={() => handleToggleActive(p)}
+                            <ToggleSwitch
+                              active={isActive}
+                              onChange={() => handleToggleActive(p)}
                               disabled={toggleLoading === p.id}
-                              style={{
-                                padding: '3px 10px',
-                                borderRadius: '12px',
-                                border: 'none',
-                                fontSize: '11px',
-                                fontWeight: 700,
-                                cursor: toggleLoading === p.id ? 'not-allowed' : 'pointer',
-                                fontFamily: 'inherit',
-                                backgroundColor: isActive ? '#DCFCE7' : '#F5F5F5',
-                                color: isActive ? '#16A34A' : 'var(--vsm-gray-mid)',
-                                opacity: toggleLoading === p.id ? 0.6 : 1,
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {isActive ? 'Activo' : 'Inactivo'}
-                            </button>
+                            />
                           </td>
                           <td style={{ padding: '8px 10px' }}>
                             <div style={{ display: 'flex', gap: '0.4rem' }}>
-                              <button onClick={() => openEdit(p)} style={actionBtn('#E8E8E8', '#111')}>Editar</button>
-                              <button onClick={() => setDeleteTarget(p)} style={actionBtn('#FEF2F2', '#DC2626')}>Desactivar</button>
+                              <button onClick={() => openEdit(p)} style={actionBtn('var(--vsm-gray)', 'var(--vsm-black)')}>Editar</button>
+                              <button onClick={() => setDeleteTarget(p)} style={actionBtn('var(--vsm-error-bg)', 'var(--vsm-error)')}>Desactivar</button>
                             </div>
                           </td>
                         </tr>

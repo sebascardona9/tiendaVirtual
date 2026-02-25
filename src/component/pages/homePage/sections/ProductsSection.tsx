@@ -8,7 +8,7 @@ const SkeletonCard = () => (
     backgroundColor: 'var(--vsm-white)',
     borderRadius: '6px',
     overflow: 'hidden',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.07)',
+    boxShadow: 'var(--vsm-shadow)',
   }}>
     <div style={{ aspectRatio: '1', backgroundColor: 'var(--vsm-gray)', animation: 'pulse 1.5s ease-in-out infinite' }} />
     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '8px' }}>

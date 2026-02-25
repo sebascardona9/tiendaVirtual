@@ -2,33 +2,13 @@ import { Link, useNavigate } from "react-router-dom"
 import React from "react"
 import { signInWithEmailAndPassword } from "firebase/auth"
 import { auth } from "../../../firebase/firebase.config"
-
-const inputStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '10px 14px',
-    border: '1px solid var(--vsm-gray)',
-    borderRadius: '5px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    outline: 'none',
-    color: 'var(--vsm-black)',
-    backgroundColor: 'var(--vsm-white)',
-    transition: 'border-color 0.2s',
-}
-
-const labelStyle: React.CSSProperties = {
-    fontSize: '13px',
-    fontWeight: 700,
-    color: 'var(--vsm-black)',
-    display: 'block',
-    marginBottom: '6px',
-}
+import { inputStyle, labelStyle, errorBox, errorText, primaryBtn, onFocusBrand, onBlurGray } from "../../../styles/formStyles"
 
 const Login = () => {
-    const [userMail, setUserMail]       = React.useState("")
-    const [userPassword, setUserPassword] = React.useState("")
-    const [errorMsg, setErrorMsg]       = React.useState<string | null>(null)
-    const [loading, setLoading]         = React.useState(false)
+    const [userMail, setUserMail]           = React.useState("")
+    const [userPassword, setUserPassword]   = React.useState("")
+    const [errorMsg, setErrorMsg]           = React.useState<string | null>(null)
+    const [loading, setLoading]             = React.useState(false)
     const navigate = useNavigate()
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -47,7 +27,6 @@ const Login = () => {
     }
 
     return (
-        /* Ocupa el viewport restante tras el nav (96 px) y centra el card */
         <div
             style={{ minHeight: 'calc(100vh - 96px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}
             className="w-full"
@@ -55,8 +34,8 @@ const Login = () => {
             <div
                 style={{
                     backgroundColor: 'var(--vsm-white)',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 24px rgba(0,0,0,0.09)',
+                    borderRadius: 'var(--vsm-radius)',
+                    boxShadow: 'var(--vsm-shadow-card)',
                     padding: '2.5rem',
                     width: '100%',
                     maxWidth: '420px',
@@ -81,15 +60,15 @@ const Login = () => {
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label htmlFor="email" style={labelStyle}>
                             Nombre de usuario o correo electrónico{' '}
-                            <span style={{ color: '#DC2626' }}>*</span>
+                            <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="email"
                             id="email"
                             value={userMail}
                             onChange={(e) => setUserMail(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -98,15 +77,15 @@ const Login = () => {
                     {/* Contraseña */}
                     <div style={{ marginBottom: '1.25rem' }}>
                         <label htmlFor="password" style={labelStyle}>
-                            Contraseña <span style={{ color: '#DC2626' }}>*</span>
+                            Contraseña <span style={{ color: 'var(--vsm-error)' }}>*</span>
                         </label>
                         <input
                             type="password"
                             id="password"
                             value={userPassword}
                             onChange={(e) => setUserPassword(e.target.value)}
-                            onFocus={(e) => (e.currentTarget.style.borderColor = 'var(--vsm-brand)')}
-                            onBlur={(e)  => (e.currentTarget.style.borderColor = 'var(--vsm-gray)')}
+                            onFocus={onFocusBrand}
+                            onBlur={onBlurGray}
                             required
                             style={inputStyle}
                         />
@@ -126,16 +105,8 @@ const Login = () => {
 
                     {/* Error */}
                     {errorMsg && (
-                        <div
-                            style={{
-                                backgroundColor: '#FEF2F2',
-                                border: '1px solid #FECACA',
-                                borderRadius: '5px',
-                                padding: '10px 14px',
-                                marginBottom: '1rem',
-                            }}
-                        >
-                            <p style={{ color: '#DC2626', fontSize: '13px', fontWeight: 600 }}>{errorMsg}</p>
+                        <div style={{ ...errorBox, marginBottom: '1rem' }}>
+                            <p style={errorText}>{errorMsg}</p>
                         </div>
                     )}
 
@@ -144,20 +115,9 @@ const Login = () => {
                         type="submit"
                         disabled={loading}
                         style={{
-                            width: '100%',
-                            backgroundColor: 'var(--vsm-brand)',
-                            color: '#fff',
-                            padding: '12px',
-                            borderRadius: '5px',
-                            border: 'none',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.07em',
+                            ...primaryBtn,
                             cursor: loading ? 'not-allowed' : 'pointer',
                             opacity: loading ? 0.75 : 1,
-                            transition: 'opacity 0.2s',
-                            fontFamily: 'inherit',
                         }}
                     >
                         {loading ? 'Verificando...' : 'Acceso'}

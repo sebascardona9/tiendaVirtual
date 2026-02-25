@@ -3,15 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { getDoc, getDocs, doc, collection } from 'firebase/firestore'
 import { db } from '../../../firebase/firebase.config'
 import type { Product, Category } from '../../../types/admin'
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-
-const formatCOP = (n: number) =>
-  new Intl.NumberFormat('es-CO', {
-    style: 'currency',
-    currency: 'COP',
-    maximumFractionDigits: 0,
-  }).format(n)
+import { formatCOP } from '../../../utils/formatters'
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -35,7 +27,7 @@ const SkeletonDetail = () => (
           {[0, 1, 2].map(i => (
             <div key={i} style={{
               width: '72px', height: '72px',
-              backgroundColor: 'var(--vsm-gray)', borderRadius: '8px',
+              backgroundColor: 'var(--vsm-gray)', borderRadius: 'var(--vsm-radius)',
               animation: 'pulse 1.5s ease-in-out infinite',
             }} />
           ))}
@@ -53,7 +45,7 @@ const SkeletonDetail = () => (
         ))}
         <div style={{
           width: '100%', height: '50px',
-          backgroundColor: 'var(--vsm-gray)', borderRadius: '8px',
+          backgroundColor: 'var(--vsm-gray)', borderRadius: 'var(--vsm-radius)',
           marginTop: '0.5rem', animation: 'pulse 1.5s ease-in-out infinite',
         }} />
       </div>
@@ -168,7 +160,7 @@ const ProductDetail = () => {
               overflow: 'hidden',
               border: '1px solid var(--vsm-gray)',
               aspectRatio: '1',
-              backgroundColor: '#F0EBE3',
+              backgroundColor: 'var(--vsm-bg-warm)',
               cursor: imgs.length > 0 ? 'zoom-in' : 'default',
             }}
           >
@@ -209,10 +201,10 @@ const ProductDetail = () => {
                   onClick={() => handleThumbnail(i)}
                   style={{
                     flexShrink: 0, width: '72px', height: '72px',
-                    borderRadius: '8px', overflow: 'hidden',
+                    borderRadius: 'var(--vsm-radius)', overflow: 'hidden',
                     border: `2px solid ${i === activeIdx ? 'var(--vsm-brand)' : 'var(--vsm-gray)'}`,
                     padding: 0, cursor: 'pointer',
-                    backgroundColor: '#F0EBE3',
+                    backgroundColor: 'var(--vsm-bg-warm)',
                     transition: 'border-color 0.2s', outline: 'none',
                   }}
                 >
@@ -285,7 +277,7 @@ const ProductDetail = () => {
           {/* Stock status */}
           <p style={{
             fontSize: '13px', fontWeight: 600, margin: 0,
-            color: outOfStock ? '#DC2626' : '#16A34A',
+            color: outOfStock ? 'var(--vsm-error)' : 'var(--vsm-success)',
           }}>
             {outOfStock ? 'Sin stock' : `${product.stock} disponibles`}
           </p>
@@ -298,7 +290,7 @@ const ProductDetail = () => {
               </span>
               <div style={{
                 display: 'inline-flex', alignItems: 'center',
-                border: '1px solid var(--vsm-gray)', borderRadius: '8px',
+                border: '1px solid var(--vsm-gray)', borderRadius: 'var(--vsm-radius)',
                 overflow: 'hidden',
               }}>
                 <button
@@ -335,7 +327,7 @@ const ProductDetail = () => {
               padding: '14px 24px',
               backgroundColor: outOfStock ? 'var(--vsm-gray)' : 'var(--vsm-brand)',
               color: outOfStock ? 'var(--vsm-gray-mid)' : '#fff',
-              border: 'none', borderRadius: '8px',
+              border: 'none', borderRadius: 'var(--vsm-radius)',
               fontSize: '14px', fontWeight: 700,
               textTransform: 'uppercase', letterSpacing: '0.07em',
               cursor: outOfStock ? 'not-allowed' : 'pointer',

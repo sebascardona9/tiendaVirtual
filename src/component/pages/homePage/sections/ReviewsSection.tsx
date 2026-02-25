@@ -26,7 +26,7 @@ const ReviewsSection = () => (
                 {reviews.map((r, i) => (
                     <div
                         key={i}
-                        style={{ backgroundColor: 'var(--vsm-white)', borderRadius: '8px', padding: '1.5rem', boxShadow: '0 2px 10px rgba(0,0,0,0.06)' }}
+                        style={{ backgroundColor: 'var(--vsm-white)', borderRadius: 'var(--vsm-radius)', padding: '1.5rem', boxShadow: 'var(--vsm-shadow-sm)' }}
                     >
                         <div style={{ fontSize: '14px', color: '#F5A623', marginBottom: '0.75rem' }}>
                             {'★'.repeat(r.stars)}

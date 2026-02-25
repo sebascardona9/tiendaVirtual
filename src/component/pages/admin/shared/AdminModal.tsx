@@ -35,7 +35,7 @@ const AdminModal = ({ isOpen, onClose, children, maxWidth = '560px' }: AdminModa
         onClick={(e) => e.stopPropagation()}
         style={{
           backgroundColor: 'var(--vsm-white)',
-          borderRadius: '8px',
+          borderRadius: 'var(--vsm-radius)',
           padding: '2rem',
           width: '100%',
           maxWidth,
