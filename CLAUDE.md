@@ -42,7 +42,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 | Path | Component | Protegida |
 |------|-----------|-----------|
 | `/` | `HomePage` | No |
-| `/juguetes` | `HomePage` | No |
+| `/juguetes` | `CatalogPage` | No |
 | `/producto/:id` | `ProductDetail` | No |
 | `/Login` | `Login` | No |
 | `/Register` | `Register` | No |
@@ -80,12 +80,37 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 
 | Archivo | Sección |
 |---------|---------|
-| `HeroSection.tsx` | Gradiente oscuro cálido, texto blanco, CTA "Comprar ahora" |
+| `HeroSection.tsx` | Gradiente oscuro cálido, texto blanco, CTA "Comprar ahora" + carrusel dinámico de productos |
 | `CategoryCards.tsx` | "Conoce nuestras Velas" — 2 tarjetas de categoría |
 | `ProductsSection.tsx` | "Nuestros Productos" — grid de `<ProductCard/>` con skeleton loader |
 | `CandleTypesSection.tsx` | "Tipos de Velas" — 4 categorías en grid |
 | `ReviewsSection.tsx` | "Lo que dicen nuestros clientes" — 3 testimonios |
 | `NewsletterSection.tsx` | "Regístrate y obtén 10% OFF" — formulario email |
+
+**`HeroSection.tsx`** — sección hero con carrusel dinámico en la columna derecha:
+- `HeroCarousel` — componente interno; usa `useCollection<Product>('products', where('active','==',true))`
+- Ordena client-side por `createdAt` desc, muestra máximo 8 productos
+- Rotación automática cada 3 s; se pausa al interactuar manualmente y se reanuda a los 5 s
+- Transición fade (opacity 0.2 s) con `fadingRef` para evitar transiciones solapadas
+- Navegación: flechas ‹ / › + puntos indicadores (activo en `var(--vsm-brand)`)
+- Clic en slide → `navigate(`/producto/${id}`)`
+- Imagen: `p.images?.[0] ?? p.imageUrl` (backwards compat); placeholder emoji si no hay imagen
+- Estados: `CarouselSkeleton` (pulse animation) y `EmptyCarousel`
+- Estilos de animación en `HeroSection.css` (no modifica `index.css`)
+- Responsive: en mobile la columna del carrusel se apila debajo del texto (grid `grid-cols-1` → `lg:grid-cols-2`)
+
+**`ProductsSection.tsx`** — filtra `p.active !== false` client-side (backwards compat: productos sin campo `active` en Firestore siguen visibles).
+
+### CatalogPage (`src/component/pages/catalog/CatalogPage.tsx`)
+- Ruta `/juguetes`
+- Suscripciones: `categories` + `subcategories` + `products` con `where('active','==',true)`
+- Orden client-side por `createdAt` (evita índices compuestos en Firestore)
+- **Fila 1**: chips de categoría (Todos | Cat A | Cat B…)
+- **Fila 2**: chips de subcategoría (solo cuando hay categoría seleccionada)
+- Sub-chips con tinte `rgba(201,107,43,0.08)` inactivo / brand activo
+- Filtro de integridad referencial: productos cuya categoría/subcategoría no esté activa se ocultan
+- Grid responsive: `grid-cols-2 / md:grid-cols-3 / lg:grid-cols-4`
+- Estado vacío con botón "Ver todos los productos"
 
 ### Login & Register
 - Ambos usan `minHeight: calc(100vh - 96px)` para centrar el card correctamente bajo el nav fijo
@@ -116,6 +141,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 
 **`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
 **`Product.aroma?: string`** — campo opcional; si existe se muestra en el detalle del producto
+**`Product.active: boolean`** — backwards compat: filtrar con `p.active !== false` en homepage; `where('active','==',true)` en CatalogPage
 
 ### Footer (`src/component/pages/footer/`)
 4 columnas: Logo + Sobre Nosotros | Nuestras Políticas | Más Información | Newsletter inline.
@@ -140,25 +166,36 @@ Panel completo con 3 secciones accesible en `/#/Admin` (protegida por `Protecter
 - Skeleton loading con 3 boxes grises mientras cargan
 
 ### Productos — `products/ProductList.tsx`
-- Dos `onSnapshot`: products + categories (para resolver `categoryId` → nombre)
+- Tres `onSnapshot`: products + categories + subcategories
 - Tabs: "Productos" | "Categorías" (tipo `ProductsTab`)
 - Tabla paginada: `ITEMS_PER_PAGE = 10`, reset página cuando cambia la lista
-- Columnas: imagen (48px con fallback), nombre, categoría, precio COP, stock (rojo si 0), acciones
-- "Nuevo Producto" → `ProductForm` sin `product`; "Editar" → `ProductForm` con `product`; "Eliminar" → `ConfirmDialog`
+- Columnas: imagen (48px), nombre, categoría, subcategoría, precio COP, stock (rojo si 0), activo (pill toggle), acciones
+- Pill toggle "Activo/Inactivo": `updateDoc({ active: !current })` inline
+- **Soft delete**: botón "Desactivar" → `updateDoc({ active: false })` (no deleteDoc)
+- "Nuevo Producto" → `ProductForm` sin `product`; "Editar" → `ProductForm` con `product`
+- Filas con `opacity: 0.55` cuando `active === false`
 
 ### Formulario producto — `products/ProductForm.tsx`
 - Modo create (`!product`) vs edit (`!!product`)
-- Campos: nombre, descripción, precio, stock, categoría (select), URL imagen (texto), archivo imagen
+- Props: `categories: Category[]`, `subcategories: Subcategory[]`
+- Campos: nombre, descripción, precio, stock, categoría (select — solo activas), subcategoría (select condicional — solo si hay subs activas para la cat seleccionada), activo (checkbox), imágenes (URL + archivo)
+- Al cambiar categoría → reset subcategoryId = ''
 - File input despacha `click` sintético en `onChange` para resetear el timer de inactividad
+- Al guardar: incluye `categoryName`, `subcategoryName` desnormalizados; `subcategoryId: null` si no aplica
 - Flujo create con imagen: `addDoc` → obtener ID → `uploadBytes` → `updateDoc` con URL
 - El upload de imagen es **no-fatal**: si falla, el producto se guarda de todas formas y se muestra un aviso
 - `price` y `stock` son `number | ''` para permitir campo vacío → al guardar `Number(val) || 0`
 
 ### Categorías — `products/CategoryList.tsx`
-- `onSnapshot` en `collection(db,'categories')` ordenado por `createdAt asc`
-- CRUD inline: agregar, editar (input inline), eliminar con `ConfirmDialog`
-- Validación: nombre vacío o duplicado → error inline
-- Eliminar muestra mensaje: "Esto no eliminará los productos asociados."
+- Tres `onSnapshot`: categories + subcategories + products (para counters)
+- **ToggleSwitch** inline (36×20px pill): activa/desactiva categorías y subcategorías
+- **Filas expandibles**: click en ▼/▲ muestra panel con tabla de subcats + formulario "Nueva subcategoría"
+- Counters por categoría: `X/Y subs · Z prods` (activos/total)
+- **Bloqueo referencial al eliminar**: `checkCategoryDependencies` / `checkSubcategoryDependencies` → si hay deps activas muestra `AdminModal` con lista; si no hay, muestra `ConfirmDialog`
+- **Toggle con cascade**: desactivar categoría → batch desactiva todas sus subcategorías; muestra advertencia primero
+- **Editar nombre**: `updateCategoryName` / `updateSubcategoryName` → batch actualiza `categoryName`/`subcategoryName` en docs relacionados
+- Formulario nueva categoría: campos name + description
+- Formulario nueva subcategoría: inline en panel expandido, por categoría
 
 ### Configuración — `settings/Settings.tsx`
 - Carga inicial: `getDoc(doc(db,'settings','general'))` (no onSnapshot)
@@ -182,9 +219,13 @@ Exports: `auth`, `db`, `storage`.
 ### Colecciones Firestore
 | Colección | Campos clave |
 |-----------|-------------|
-| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `imageUrl`, `images?`, `aroma?`, `createdAt`, `updatedAt` |
-| `categories` | `name`, `createdAt` |
+| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `categoryName`, `subcategoryId?`, `subcategoryName?`, `imageUrl`, `images?`, `aroma?`, `active`, `createdAt`, `updatedAt` |
+| `categories` | `name`, `description?`, `active`, `createdAt` |
+| `subcategories` | `name`, `description?`, `categoryId`, `categoryName`, `active`, `createdAt` |
 | `settings/general` | `storeName`, `logoUrl`, `description`, `email`, `phone`, `social`, `updatedAt` |
+
+### Backward compat — campo `active` en products
+Productos en Firestore sin campo `active`: `where('active','==',true)` NO los devuelve → no aparecen en CatalogPage. `ProductsSection` (homepage) usa `p.active !== false` → siguen visibles. Al editar y guardar desde admin se escribe `active: true` → se integran al nuevo sistema.
 
 ### Storage paths
 - `logos/store-logo.{ext}` — logo de la tienda (ruta fija, siempre sobreescribe)
@@ -192,8 +233,8 @@ Exports: `auth`, `db`, `storage`.
 
 ### Reglas Firestore
 ```
-match /settings/{id}   { allow read: if true; allow write: if request.auth != null; }
-match /products/{id}   { allow read: if true; allow write: if request.auth != null; }
+match /settings/{id}      { allow read: if true; allow write: if request.auth != null; }
+match /products/{id}      { allow read: if true; allow write: if request.auth != null; }
 match /categories/{id}    { allow read: if true; allow write: if request.auth != null; }
 match /subcategories/{id} { allow read: if true; allow write: if request.auth != null; }
 ```
@@ -235,6 +276,26 @@ Encapsula toda la lógica Firebase de configuración de la tienda. `Settings.tsx
 | `uploadLogo(file)` | Sube a `logos/store-logo.{ext}` → retorna download URL |
 | `saveSettings(data, logoUrl)` | `setDoc` con `merge: true` + `serverTimestamp()` |
 
+### `categoryService.ts`
+Lógica de integridad referencial para categorías.
+
+| Función | Descripción |
+|---------|-------------|
+| `checkCategoryDependencies(id)` | Retorna `{ activeSubcategories[], activeProducts[] }` |
+| `deleteCategory(id)` | Soft delete: `updateDoc({ active: false })` |
+| `toggleCategoryActive(id, currentlyActive)` | `writeBatch`: categoría + cascade a todas sus subcategorías |
+| `updateCategoryName(id, newName)` | `writeBatch`: categoría + `categoryName` en subcategorías y productos |
+
+### `subcategoryService.ts`
+Lógica de integridad referencial para subcategorías.
+
+| Función | Descripción |
+|---------|-------------|
+| `checkSubcategoryDependencies(id)` | Retorna `{ activeProducts[] }` |
+| `deleteSubcategory(id)` | Soft delete: `updateDoc({ active: false })` |
+| `toggleSubcategoryActive(id, currentlyActive)` | `updateDoc({ active: !currentlyActive })` |
+| `updateSubcategoryName(id, newName)` | `writeBatch`: subcategoría + `subcategoryName` en productos |
+
 ---
 
 ## Hooks y Types
@@ -253,9 +314,10 @@ Encapsula toda la lógica Firebase de configuración de la tienda. `Settings.tsx
 - Genérico: `useCollection<T>(collectionName, ...constraints)` → `{ data: T[], loading: boolean }`
 - Suscribe con `onSnapshot`, mapea docs a `{ id, ...data }`, hace unsubscribe en cleanup
 - Acepta `QueryConstraint` opcionales (ej: `orderBy('createdAt', 'asc')`)
+- **Nota**: combinar `where` + `orderBy` en la misma query requiere índice compuesto en Firestore. Preferir ordenar client-side con `useMemo` para evitarlo.
 
 ### `src/types/admin.ts`
-Interfaces centralizadas: `Product`, `Category`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `SettingsFormData`, `AdminSection`, `ProductsTab`
+Interfaces centralizadas: `Product`, `Category`, `Subcategory`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData`, `AdminSection`, `ProductsTab`
 
 ---
 
