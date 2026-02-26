@@ -5,7 +5,7 @@ import logoImg from '../../../assets/Images/Logo.jpeg'
 
 const navLinks = [
     { to: '/',         text: 'Inicio'      },
-    { to: '/juguetes', text: '+ Productos' },
+    { to: '/catalogo', text: '+ Productos' },
     { to: '/#nosotros',text: 'Nosotros'   },
     { to: '/contacto', text: 'Contacto'   },
 ]

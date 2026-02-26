@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from "react"
+import { useMemo } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { where } from "firebase/firestore"
 import useCollection from "../../../../hooks/useCollection"
+import { useCarousel } from "../../../../hooks/useCarousel"
 import type { Product } from "../../../../types/admin"
 import './HeroSection.css'
 
@@ -43,52 +44,12 @@ const HeroCarousel = () => {
     [raw]
   )
 
-  const [idx, setIdx]       = useState(0)
-  const [fading, setFading] = useState(false)
-  const fadingRef           = useRef(false)
-  const pausedRef           = useRef(false)
-  const pauseTimerRef       = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const navigate            = useNavigate()
-
-  // Clamp index if products list shrinks after load
-  useEffect(() => {
-    if (products.length > 0) setIdx(i => Math.min(i, products.length - 1))
-  }, [products.length])
-
-  // Auto-rotate
-  useEffect(() => {
-    if (products.length < 2) return
-
-    const interval = setInterval(() => {
-      if (pausedRef.current || fadingRef.current) return
-      fadingRef.current = true
-      setFading(true)
-      setTimeout(() => {
-        setIdx(i => (i + 1) % products.length)
-        setFading(false)
-        fadingRef.current = false
-      }, 200)
-    }, AUTO_MS)
-
-    return () => {
-      clearInterval(interval)
-      if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current)
-    }
-  }, [products.length])
-
-  const goTo = (next: number) => {
-    if (fadingRef.current) return
-    pausedRef.current = true
-    if (pauseTimerRef.current) clearTimeout(pauseTimerRef.current)
-    pauseTimerRef.current = setTimeout(() => { pausedRef.current = false }, PAUSE_MS)
-    fadingRef.current = true
-    setFading(true)
-    setTimeout(() => {
-      setIdx(next)
-      setFading(false)
-      fadingRef.current = false
-    }, 200)
-  }
+  const navigate = useNavigate()
+  const { idx, fading, goTo } = useCarousel({
+    count: products.length,
+    autoIntervalMs: AUTO_MS,
+    pauseAfterMs: PAUSE_MS,
+  })
 
   if (loading) return <CarouselSkeleton />
   if (products.length === 0) return <EmptyCarousel />
@@ -221,7 +182,7 @@ const HeroSection = () => (
         </p>
         <div className="flex flex-wrap gap-4">
           <Link
-            to="/juguetes"
+            to="/catalogo"
             style={{ backgroundColor: 'var(--vsm-brand)', color: '#fff', borderRadius: '5px', padding: '12px 28px', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', textDecoration: 'none' }}
             className="hover:opacity-90 transition-opacity"
           >

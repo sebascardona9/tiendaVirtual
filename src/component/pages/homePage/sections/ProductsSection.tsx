@@ -47,7 +47,7 @@ const ProductsSection = () => {
             </div>
             <div style={{ textAlign: 'center', marginTop: '2.5rem' }}>
               <Link
-                to="/juguetes"
+                to="/catalogo"
                 style={{ color: 'var(--vsm-brand)', fontWeight: 700, fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '4px' }}
               >
                 Ver todos los productos →

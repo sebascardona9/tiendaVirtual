@@ -49,6 +49,7 @@ export interface StoreSettings {
   description: string
   email: string
   phone: string
+  address?: string
   social: SocialLinks
   updatedAt: Timestamp
 }
@@ -79,6 +80,7 @@ export interface SettingsFormData {
   description: string
   email: string
   phone: string
+  address: string
   social: SocialLinks
 }
 

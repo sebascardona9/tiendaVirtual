@@ -1,33 +1,33 @@
-@import url('https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&display=swap');
 
 /* Velas Santa Marta – design tokens */
 :root {
   /* Colores base */
-  --vsm-bg:         #F5F5F5;
+  --vsm-bg:         #FAF7F2;   /* warm white */
   --vsm-white:      #FFFFFF;
-  --vsm-black:      #111111;
-  --vsm-gray:       #E8E8E8;
-  --vsm-gray-mid:   #777777;
-  --vsm-brand:      #C96B2B;
-  --vsm-brand-dark: #A8561F;
+  --vsm-black:      #1A1208;   /* warm dark */
+  --vsm-gray:       #E4D9CC;   /* warm gray — bordes, skeletons */
+  --vsm-gray-mid:   #7A6248;   /* warm brown — texto secundario */
+  --vsm-brand:      #C8732A;   /* amber */
+  --vsm-brand-dark: #A8561F;   /* amber hover */
 
   /* Semánticos */
-  --vsm-error:      #DC2626;
-  --vsm-error-bg:   #FEF2F2;
+  --vsm-error:        #DC2626;
+  --vsm-error-bg:     #FEF2F2;
   --vsm-error-border: #FECACA;
-  --vsm-success:    #16A34A;
-  --vsm-success-bg: #F0FDF4;
+  --vsm-success:      #16A34A;
+  --vsm-success-bg:   #F0FDF4;
   --vsm-success-border: #86EFAC;
-  --vsm-bg-warm:    #F0EBE3;
+  --vsm-bg-warm:      #F5EFE4;  /* cream */
 
   /* Sombras */
-  --vsm-shadow:     0 2px 10px rgba(0,0,0,0.07);
-  --vsm-shadow-card: 0 4px 24px rgba(0,0,0,0.09);
-  --vsm-shadow-sm:  0 2px 8px rgba(0,0,0,0.06);
+  --vsm-shadow:      0 2px 10px rgba(26, 18, 8, 0.08);
+  --vsm-shadow-card: 0 4px 24px rgba(26, 18, 8, 0.10);
+  --vsm-shadow-sm:   0 2px 8px  rgba(26, 18, 8, 0.06);
 
   /* Radios */
-  --vsm-radius:     8px;
-  --vsm-radius-sm:  5px;
+  --vsm-radius:    8px;
+  --vsm-radius-sm: 5px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,7 +35,11 @@
 body {
   background-color: var(--vsm-bg);
   color: var(--vsm-black);
-  font-family: 'Mulish', sans-serif;
+  font-family: 'DM Sans', sans-serif;
+}
+
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', serif;
 }
 
 ::-webkit-scrollbar { width: 6px; }

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { where } from 'firebase/firestore'
 import useCollection from '../../../hooks/useCollection'
 import ProductCard from '../../../ui/cards/ProductCard'
@@ -78,7 +79,8 @@ const CatalogPage = () => {
 
   const loading = loadingCats || loadingSubs || loadingProds
 
-  const [selectedCategoryId,    setSelectedCategoryId]    = useState<string | null>(null)
+  const [searchParams] = useSearchParams()
+  const [selectedCategoryId,    setSelectedCategoryId]    = useState<string | null>(searchParams.get('categoria'))
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string | null>(null)
 
   // Subcategories visible when a category is selected

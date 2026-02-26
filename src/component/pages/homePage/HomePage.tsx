@@ -3,7 +3,6 @@ import CategoryCards     from "./sections/CategoryCards"
 import ProductsSection   from "./sections/ProductsSection"
 import CandleTypesSection from "./sections/CandleTypesSection"
 import ReviewsSection    from "./sections/ReviewsSection"
-import NewsletterSection from "./sections/NewsletterSection"
 
 const HomePage = () => (
     <div className="w-full">
@@ -12,7 +11,6 @@ const HomePage = () => (
         <ProductsSection />
         <CandleTypesSection />
         <ReviewsSection />
-        <NewsletterSection />
     </div>
 )
 

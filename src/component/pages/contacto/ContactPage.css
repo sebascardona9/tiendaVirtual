@@ -1,0 +1,27 @@
+/* ── Success message ──────────────────────────────────────────────────────── */
+.contact-success {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  animation: contactFadeUp 0.5s ease forwards;
+}
+
+@keyframes contactFadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Submit spinner ───────────────────────────────────────────────────────── */
+.contact-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: contactSpin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes contactSpin {
+  to { transform: rotate(360deg); }
+}

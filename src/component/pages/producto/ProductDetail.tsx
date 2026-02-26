@@ -70,7 +70,7 @@ const NotFoundProduct = () => (
       El producto que buscas no existe o fue eliminado.
     </p>
     <Link
-      to="/juguetes"
+      to="/catalogo"
       style={{
         color: 'var(--vsm-brand)', fontWeight: 600,
         textDecoration: 'underline', textUnderlineOffset: '3px',
@@ -138,7 +138,7 @@ const ProductDetail = () => {
 
       {/* ── Back button ───────────────────────────────────────────── */}
       <Link
-        to="/juguetes"
+        to="/catalogo"
         style={{
           display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
           color: 'var(--vsm-gray-mid)', textDecoration: 'none',

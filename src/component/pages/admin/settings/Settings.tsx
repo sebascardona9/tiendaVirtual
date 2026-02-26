@@ -9,6 +9,7 @@ const emptyForm: SettingsFormData = {
   description: '',
   email: '',
   phone: '',
+  address: '',
   social: { instagram: '', facebook: '', whatsapp: '', tiktok: '' },
 }
 
@@ -33,6 +34,7 @@ const Settings = () => {
           description: data.description ?? '',
           email:       data.email       ?? '',
           phone:       data.phone       ?? '',
+          address:     data.address     ?? '',
           social:      data.social      ?? emptyForm.social,
         })
         setCurrentLogoUrl(data.logoUrl ?? '')
@@ -137,6 +139,14 @@ const Settings = () => {
               style={{ ...inputStyle, resize: 'vertical' }}
               onFocus={onFocusBrand} onBlur={onBlurGray}
             />
+          </div>
+
+          {/* Dirección */}
+          <div>
+            <label style={labelStyle}>Dirección</label>
+            <input value={formData.address} onChange={e => setField('address', e.target.value)}
+              placeholder="Ej: Calle 15 #3-45, Santa Marta"
+              style={inputStyle} onFocus={onFocusBrand} onBlur={onBlurGray} />
           </div>
 
           {/* Email + Teléfono */}
