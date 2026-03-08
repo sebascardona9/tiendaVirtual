@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import useCollection from "../../../../hooks/useCollection"
 import ProductCard from "../../../../ui/cards/ProductCard"
+import Section from "../../../../ui/layout/Section"
 import type { Product } from "../../../../types/admin"
 
 const SkeletonCard = () => (
@@ -26,9 +27,8 @@ const ProductsSection = () => {
   const visibleProducts = products.filter(p => p.active !== false)
 
   return (
-    <section style={{ backgroundColor: 'var(--vsm-bg)' }} className="py-20 px-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 style={{ fontWeight: 800, fontSize: '1.6rem', color: 'var(--vsm-black)', marginBottom: '1.75rem' }}>
+    <Section style={{ backgroundColor: 'var(--vsm-bg)' }}>
+      <h2 style={{ fontWeight: 800, fontSize: 'var(--vsm-font-heading-lg)', color: 'var(--vsm-black)', marginBottom: '1.75rem' }}>
           Nuestros Productos
         </h2>
 
@@ -55,8 +55,7 @@ const ProductsSection = () => {
             </div>
           </>
         )}
-      </div>
-    </section>
+    </Section>
   )
 }
 

@@ -89,7 +89,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <h3 style={{ fontSize: '13px', fontWeight: 600, marginBottom: '4px', color: 'var(--vsm-black)' }}>
           {product.name}
         </h3>
-        <p style={{ fontSize: '10px', color: 'var(--vsm-gray-mid)', marginBottom: '8px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        <p style={{ fontSize: '11px', color: 'var(--vsm-gray-mid)', marginBottom: '8px', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {product.description}
         </p>
         <p style={{ fontSize: '16px', fontWeight: 800, color: 'var(--vsm-black)', marginBottom: '12px' }}>

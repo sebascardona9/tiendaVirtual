@@ -19,7 +19,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
           {skeletonBox}{skeletonBox}
         </div>
         {skeletonBox}
@@ -39,7 +39,7 @@ const Dashboard = () => {
       </h2>
 
       {/* Tarjetas de estadísticas */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem', marginBottom: '1rem' }}>
         {statCards.map(card => (
           <div
             key={card.label}
@@ -54,7 +54,7 @@ const Dashboard = () => {
             <p style={{ fontSize: '13px', color: 'var(--vsm-gray-mid)', fontWeight: 600, marginBottom: '0.5rem' }}>
               {card.label}
             </p>
-            <p style={{ fontSize: '2rem', fontWeight: 800, color: card.color, lineHeight: 1 }}>
+            <p style={{ fontSize: 'var(--vsm-font-price)', fontWeight: 800, color: card.color, lineHeight: 1 }}>
               {card.value}
             </p>
           </div>

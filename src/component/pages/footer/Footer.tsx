@@ -1,10 +1,15 @@
 import { Link } from 'react-router-dom'
 import { footerData } from './FooterLinks'
 import logoImg from '../../../assets/Images/Logo.jpeg'
+import { useSettings } from '../../../hooks/useSettings'
 
-const Footer = () => (
-    <footer style={{ backgroundColor: 'var(--vsm-white)', borderTop: '1px solid var(--vsm-gray)' }} className="py-14">
-        <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+const FALLBACK_DESCRIPTION = 'Somos una pequeña empresa artesanal nacida en Santa Marta, Colombia. Elaboramos velas a mano con cera natural e ingredientes del Caribe colombiano para crear experiencias únicas en tu hogar.'
+
+const Footer = () => {
+  const { settings } = useSettings()
+  return (
+    <footer style={{ backgroundColor: 'var(--vsm-white)', borderTop: '1px solid var(--vsm-gray)' }} className="py-10 md:py-14">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
 
             {/* Col 1: Logo + About + Social */}
             <div>
@@ -51,9 +56,7 @@ const Footer = () => (
                     Sobre Nosotros
                 </h3>
                 <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '13px', lineHeight: 1.8 }}>
-                    Somos una pequeña empresa artesanal nacida en Santa Marta, Colombia.
-                    Elaboramos velas a mano con cera natural e ingredientes del Caribe colombiano
-                    para crear experiencias únicas en tu hogar.
+                    {settings?.description || FALLBACK_DESCRIPTION}
                 </p>
             </div>
 
@@ -83,16 +86,26 @@ const Footer = () => (
         {/* Bottom bar */}
         <div
             style={{ borderTop: '1px solid var(--vsm-gray)', marginTop: '3rem', paddingTop: '1.5rem' }}
-            className="max-w-7xl mx-auto px-8 flex flex-col md:flex-row justify-between items-center gap-2"
+            className="max-w-7xl mx-auto px-4 md:px-8 flex flex-col md:flex-row justify-between items-center gap-2"
         >
             <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '12px' }}>
-                Copyright © 2025 Velas Santa Marta
+                © {new Date().getFullYear()} Angela Aristizabal · Pereira, Colombia
             </p>
-            <p style={{ color: 'var(--vsm-gray-mid)', fontSize: '12px' }}>
-                Santa Marta, Magdalena, Colombia
+            <p style={{ fontSize: '12px', color: 'var(--vsm-gray-mid)' }}>
+                Diseñado y desarrollado por{' '}
+                <a
+                    href="https://www.linkedin.com/in/ingesebas"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--vsm-brand)', fontWeight: 700, textDecoration: 'none' }}
+                    className="hover:underline"
+                >
+                    IngeSebas
+                </a>
             </p>
         </div>
     </footer>
-)
+  )
+}
 
 export default Footer

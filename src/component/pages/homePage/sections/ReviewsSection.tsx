@@ -16,10 +16,11 @@ const reviews = [
     },
 ]
 
+import Section from '../../../../ui/layout/Section'
+
 const ReviewsSection = () => (
-    <section id="nosotros" style={{ backgroundColor: 'var(--vsm-bg)' }} className="py-20 px-8">
-        <div className="max-w-7xl mx-auto">
-            <h2 style={{ fontWeight: 800, fontSize: '1.6rem', textAlign: 'center', color: 'var(--vsm-black)', marginBottom: '2.5rem' }}>
+    <Section id="nosotros" style={{ backgroundColor: 'var(--vsm-bg)' }}>
+            <h2 style={{ fontWeight: 800, fontSize: 'var(--vsm-font-heading-lg)', textAlign: 'center', color: 'var(--vsm-black)', marginBottom: '2.5rem' }}>
                 Lo que dicen nuestros clientes
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -40,8 +41,7 @@ const ReviewsSection = () => (
                     </div>
                 ))}
             </div>
-        </div>
-    </section>
+    </Section>
 )
 
 export default ReviewsSection

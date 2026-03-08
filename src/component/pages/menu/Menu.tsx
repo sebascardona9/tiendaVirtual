@@ -25,7 +25,7 @@ const Menu = () => {
         <header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 40 }}>
             <nav
                 style={{ backgroundColor: 'var(--vsm-white)', borderBottom: '1px solid var(--vsm-gray)' }}
-                className="flex justify-between items-center py-3 px-8"
+                className="flex justify-between items-center py-3 px-4 md:px-8"
             >
                 {/* Logo */}
                 <NavLink to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">

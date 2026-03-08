@@ -6,13 +6,13 @@
 }
 
 .hero-skeleton-block {
-  background-color: rgba(255, 255, 255, 0.08);
+  background-color: var(--vsm-gray);
   animation: heroSkeletonPulse 1.5s ease-in-out infinite;
 }
 
 .hero-carousel-container {
-  background-color: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background-color: var(--vsm-white);
+  border: 1px solid var(--vsm-gray);
   border-radius: 12px;
   overflow: hidden;
   position: relative;
@@ -24,8 +24,8 @@
   position: absolute;
   top: 38%;
   transform: translateY(-50%);
-  background-color: rgba(0, 0, 0, 0.38);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--vsm-gray);
   border-radius: 50%;
   width: 34px;
   height: 34px;

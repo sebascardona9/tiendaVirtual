@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { where } from 'firebase/firestore'
 import useCollection from '../../../../hooks/useCollection'
+import Section from '../../../../ui/layout/Section'
 import type { Subcategory, Product } from '../../../../types/admin'
 
 const SkeletonCard = () => (
@@ -46,12 +47,11 @@ const CandleTypesSection = () => {
   if (!loading && subcategories.length === 0) return null
 
   return (
-    <section style={{ backgroundColor: 'var(--vsm-bg)' }} className="py-20 px-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 style={{ fontWeight: 800, fontSize: '1.6rem', textAlign: 'center', color: 'var(--vsm-black)', marginBottom: '1rem' }}>
+    <Section style={{ backgroundColor: 'var(--vsm-bg)' }}>
+      <h2 style={{ fontWeight: 800, fontSize: 'var(--vsm-font-heading-lg)', textAlign: 'center', color: 'var(--vsm-black)', marginBottom: '1rem' }}>
           Explora nuestras colecciones
         </h2>
-        <p style={{ color: 'var(--vsm-gray-mid)', textAlign: 'center', maxWidth: '650px', margin: '0 auto 2.5rem', lineHeight: 1.8, fontSize: '14px' }}>
+        <p style={{ color: 'var(--vsm-gray-mid)', textAlign: 'center', maxWidth: '650px', width: '100%', margin: '0 auto 2.5rem', lineHeight: 1.8, fontSize: '14px' }}>
           Encuentra la vela perfecta entre nuestras colecciones artesanales, elaboradas con cera natural e ingredientes seleccionados.
         </p>
 
@@ -120,8 +120,7 @@ const CandleTypesSection = () => {
             })}
           </div>
         )}
-      </div>
-    </section>
+    </Section>
   )
 }
 

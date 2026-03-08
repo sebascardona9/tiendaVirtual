@@ -36,7 +36,7 @@ const AdminModal = ({ isOpen, onClose, children, maxWidth = '560px' }: AdminModa
         style={{
           backgroundColor: 'var(--vsm-white)',
           borderRadius: 'var(--vsm-radius)',
-          padding: '2rem',
+          padding: 'var(--vsm-pad-modal)',
           width: '100%',
           maxWidth,
           position: 'relative',

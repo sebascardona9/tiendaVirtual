@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { where } from 'firebase/firestore'
 import useCollection from '../../../../hooks/useCollection'
 import ProductCarousel from '../../../../ui/carousels/ProductCarousel'
+import Section from '../../../../ui/layout/Section'
 import type { Category, Product } from '../../../../types/admin'
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
@@ -106,9 +107,8 @@ const CategoryCards = () => {
     : 'grid grid-cols-1 md:grid-cols-2 gap-6'
 
   return (
-    <section style={{ backgroundColor: 'var(--vsm-white)' }} className="py-20 px-8">
-      <div className="max-w-7xl mx-auto">
-        <h2 style={{ fontWeight: 800, fontSize: '1.6rem', color: 'var(--vsm-black)', marginBottom: '2rem' }}>
+    <Section style={{ backgroundColor: 'var(--vsm-white)' }}>
+      <h2 style={{ fontWeight: 800, fontSize: 'var(--vsm-font-heading-lg)', color: 'var(--vsm-black)', marginBottom: '2rem' }}>
           Conoce nuestras Velas y otros productos
         </h2>
 
@@ -132,8 +132,7 @@ const CategoryCards = () => {
             ))}
           </div>
         )}
-      </div>
-    </section>
+    </Section>
   )
 }
 
