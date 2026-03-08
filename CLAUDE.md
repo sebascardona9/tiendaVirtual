@@ -36,6 +36,40 @@ Diseño visual de estética cálida/artesanal: tipografía **Cormorant Garamond*
 - **Cuerpo**: `DM Sans` — pesos 300 / 400 / 500
 - Import en `index.css` vía Google Fonts
 
+---
+
+## Principio de arquitectura: SRP (Single Responsibility Principle)
+
+Todo el panel admin y las páginas complejas siguen SRP. Cada archivo tiene **una única responsabilidad**:
+
+| Capa | Responsabilidad | Ejemplo |
+|------|----------------|---------|
+| **Servicio** (`*.service.ts`) | Toda la lógica Firebase (Firestore/Storage). Los componentes no importan Firebase directamente. | `aromas.service.ts` |
+| **Hook de datos** (`use*.ts`) | Suscripción reactiva a Firestore vía `useCollection`. Wrapper fino. | `useAromas.ts` |
+| **Orquestador** (`*Section.tsx`, `*List.tsx` padre) | Estado local, handlers, coordina hijos. Sin lógica de UI propia. | `AromasSection.tsx` |
+| **Lista** (`*List.tsx`) | Tabla/lista pura, 100% props-driven. Solo emite eventos. Sin estado. | `AromasList.tsx` |
+| **Formulario** (`*Form.tsx`) | Estado local mínimo del form. Llama al servicio. Siempre dentro de `AdminModal`. | `AromaForm.tsx` |
+| **Modal de eliminación** (`*DeleteModal.tsx`) | Lógica de bloqueo referencial + ConfirmDialog. | `AtributoDeleteModal.tsx` |
+| **Componente hoja** | UI pura sin side effects. | `ColorPreview.tsx`, `ToggleSwitch.tsx` |
+
+### Patrón CRUD admin (replicar al añadir nuevas entidades)
+
+```
+src/services/entidad.service.ts          → checkDependencies, delete, toggle, save
+src/hooks/useEntidad.ts                  → wrapper fino sobre useCollection
+src/component/pages/admin/.../
+  EntidadSection.tsx                     → estado: showForm, editItem, deleteTarget, blockInfo, toggleLoading
+  EntidadList.tsx                        → tabla pura: props aromas, toggleLoading, onToggle, onEdit, onDelete
+  EntidadForm.tsx                        → AdminModal + form local + llama a service
+  EntidadDeleteModal.tsx                 → blockInfo===null→spinner | deps>0→bloqueado | deps===0→ConfirmDialog
+```
+
+**Regla de eliminación**: siempre soft-delete (`active: false` / `activo: false`), nunca `deleteDoc`. Verificar dependencias activas antes con `checkDependencies` y mostrar bloqueo si las hay.
+
+**Nombres de campos**: productos/categorías usan inglés (`active`, `createdAt`). Aromas/colores usan español (`activo`, `creadoEn`) — mantener consistencia dentro de cada colección.
+
+---
+
 ## Architecture
 
 React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React Router v6 con `HashRouter` (requerido por GitHub Pages).
@@ -123,15 +157,20 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 
 **`ProductsSection.tsx`** — filtra `p.active !== false` client-side (backwards compat).
 
-### ContactPage (`src/component/pages/contacto/ContactPage.tsx`)
-- Ruta `/contacto`
-- **Hero**: `minHeight: 60vh`, fondo `#1A1208`, radial glow ámbar, título Cormorant Garamond italic peso 300, vela 🕯️ decorativa en borde inferior
-- **Sección principal** (2 columnas con `grid auto-fit minmax(300px,1fr)`):
-  - *Izquierda*: tarjetas de info (📍 Dirección, 📧 Email, 📱 Teléfono) con hover elevación + sombra ámbar. Botón WhatsApp (`#25D366`, `wa.me/{phone}`). Link Instagram con SVG. Todo desde `useSettings()`
-  - *Derecha*: formulario — nombre, email, asunto (select), mensaje. Validación inline. Guarda en colección `messages` con `{ name, email, subject, message, createdAt, read: false }`. Éxito animado, spinner en submit.
-- **FadeIn**: wrapper con `IntersectionObserver` para aparición suave de elementos al scroll
-- **Quote banner**: fondo oscuro, frase italic en Cormorant Garamond
-- Estilos de animación en `ContactPage.css` (spinner + fadeInUp)
+### ContactPage (`src/component/pages/contacto/`)
+Ruta `/contacto`. Componentes extraídos en `contacto/components/` (SRP):
+- `ContactForm.tsx` — formulario: nombre, email, asunto, mensaje → guarda en colección `messages`
+- `InfoCard.tsx` — tarjeta de contacto con hover elevación + sombra ámbar
+- `WhatsAppButton.tsx` — botón verde (`#25D366`, `wa.me/{phone}`)
+- `InstagramLink.tsx` — link con SVG
+- `FadeIn.tsx` — wrapper `IntersectionObserver` para scroll animations
+
+`ContactPage.tsx` — orquestador:
+- **Hero**: `minHeight: 60vh`, fondo `#1A1208`, radial glow ámbar, título Cormorant italic peso 300
+- **Sección principal** (2 columnas `grid auto-fit minmax(300px,1fr)`): info cards a la izquierda, formulario a la derecha
+- **Quote banner**: fondo oscuro, frase italic
+- Datos de contacto desde `useSettings()`; formulario guarda `{ name, email, subject, message, createdAt, read: false }`
+- Estilos en `ContactPage.css` (spinner + keyframe `contactFadeUp`)
 
 ### CatalogPage (`src/component/pages/catalog/CatalogPage.tsx`)
 - Ruta `/catalogo`
@@ -169,16 +208,22 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Clic en imagen → `navigate('/producto/:id')`
 - `loading="lazy"` en todas las imágenes; placeholder 🕯️ si sin imagen o sin productos
 
-**`src/component/pages/producto/ProductDetail.tsx`** — página de detalle dedicada:
-- Ruta propia `/producto/:id`; obtiene el ID de `useParams()`
+**`src/component/pages/producto/ProductDetail.tsx`** — página de detalle:
+- Ruta `/producto/:id`; obtiene el ID de `useParams()`
 - `Promise.all` para cargar producto + categorías desde Firestore en paralelo
-- Columna izquierda (60%): imagen principal con zoom + fade, miniaturas scrolleables
-- Columna derecha (40%): badge categoría, nombre, precio, descripción, aroma, cantidad, botón carrito
-- Skeleton loader; página 404 amigable si el producto no existe
+- Columna izquierda (60%): `<ProductGallery>` — imagen principal con zoom + fade, miniaturas
+- Columna derecha (40%): `<ProductInfo>` — badge categoría, nombre, precio, descripción, `<ProductoAtributos>`, stock, cantidad, botón carrito
+- Skeleton loader (`<SkeletonDetail>`); página 404 amigable (`<NotFoundProduct>`)
 - Responsive: `grid-cols-1` → `grid-cols-[3fr_2fr]`
+- Componentes extraídos en `producto/components/` (SRP)
+
+**`ProductoAtributos.tsx`** — muestra aroma y color del producto:
+- Backward compat: `aromaNombre || aroma` (campo legacy string)
+- Si no hay ningún atributo → `return null`
+- Muestra `<ColorPreview>` con el hex del color si existe
 
 **`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
-**`Product.aroma?: string`** — campo opcional; si existe se muestra en el detalle del producto
+**`Product.aroma?: string`** — campo legacy; usar `aromaNombre` en productos nuevos
 **`Product.active: boolean`** — backwards compat: filtrar con `p.active !== false` en homepage; `where('active','==',true)` en CatalogPage
 
 ### Footer (`src/component/pages/footer/`)
@@ -189,7 +234,7 @@ Links definidos en `FooterLinks.ts`.
 
 ## Admin Panel (`src/component/pages/admin/`)
 
-Panel completo con 3 secciones accesible en `/#/Admin` (protegida por `ProtecterRouter`).
+Panel completo accesible en `/#/Admin` (protegida por `ProtecterRouter`).
 
 ### Shell — `Admin.tsx`
 - Layout: header (título + saludo + logout) + sidebar 200px desktop / tab row mobile + `<main>`
@@ -204,41 +249,58 @@ Panel completo con 3 secciones accesible en `/#/Admin` (protegida por `Protecter
 - Skeleton loading con 3 boxes grises mientras cargan
 
 ### Productos — `products/ProductList.tsx`
-- Tres `onSnapshot`: products + categories + subcategories
-- Tabs: "Productos" | "Categorías" (tipo `ProductsTab`)
-- Tabla paginada: `ITEMS_PER_PAGE = 10`, reset página cuando cambia la lista
-- Columnas: imagen (48px), nombre, categoría, subcategoría, precio COP, stock (rojo si 0), activo (pill toggle), acciones
-- Pill toggle "Activo/Inactivo": `updateDoc({ active: !current })` inline
-- **Soft delete**: botón "Desactivar" → `updateDoc({ active: false })` (no deleteDoc)
-- "Nuevo Producto" → `ProductForm` sin `product`; "Editar" → `ProductForm` con `product`
-- Filas con `opacity: 0.55` cuando `active === false`
+- `onSnapshot`: products + categories + subcategories
+- **3 tabs**: `'productos'` | `'categorias'` | `'atributos'` (tipo `ProductsTab`)
+- Tab productos: tabla paginada (`ITEMS_PER_PAGE = 10`), soft-delete, toggle activo
+- Tab categorías: `<CategoryList>` — gestión de categorías y subcategorías
+- Tab atributos: `<AtributosTab>` — gestión de aromas y colores
 
 ### Formulario producto — `products/ProductForm.tsx`
 - Modo create (`!product`) vs edit (`!!product`)
-- Props: `categories: Category[]`, `subcategories: Subcategory[]`
-- Campos: nombre, descripción, precio, stock, categoría, subcategoría (condicional), activo, imágenes
-- Al guardar: incluye `categoryName`, `subcategoryName` desnormalizados; `subcategoryId: null` si no aplica
+- Usa `useAtributosProducto()` para poblar selects de aroma y color
+- Handlers: `handleAromaChange(id, nombre)` / `handleColorChange(id, nombre, hex)`
+- Al guardar: incluye `categoryName`, `subcategoryName`, `aromaId/aromaNombre`, `colorId/colorNombre/colorHex` desnormalizados; `null` si no aplica
 - Flujo create con imagen: `addDoc` → obtener ID → `uploadBytes` → `updateDoc` con URL
-- El upload de imagen es **no-fatal**: si falla, el producto se guarda de todas formas
+- Componentes extraídos en `products/form/` (SRP):
+  - `ProductFields.tsx` — campos nombre, descripción, precio, stock, categoría, subcategoría, aroma, color, activo
+  - `ProductImageManager.tsx` — gestión de imágenes (upload, reorder, delete)
 
 ### Categorías — `products/CategoryList.tsx`
 - Tres `onSnapshot`: categories + subcategories + products (para counters)
-- **ToggleSwitch** inline (36×20px pill): activa/desactiva categorías y subcategorías
-- **Filas expandibles**: click en ▼/▲ muestra panel con tabla de subcats + formulario nueva subcategoría
+- Componentes en `products/categories/` (SRP): `CategoryRow`, `SubcategoryPanel`, `AddCategoryForm`
+- **ToggleSwitch** inline: activa/desactiva categorías y subcategorías
+- **Filas expandibles**: ▼/▲ muestra subcats + formulario nueva subcategoría
 - **Bloqueo referencial al eliminar**: `checkCategoryDependencies` / `checkSubcategoryDependencies`
 - **Toggle con cascade**: desactivar categoría → batch desactiva todas sus subcategorías
-- **Editar nombre**: `updateCategoryName` / `updateSubcategoryName` → batch actualiza docs relacionados
+- **Editar nombre**: batch actualiza `categoryName`/`subcategoryName` en docs relacionados
+
+### Atributos — `products/` → `settings/atributos/` (tab en ProductList)
+Gestión de aromas y colores. Componentes en `settings/atributos/` (SRP):
+
+| Componente | Responsabilidad |
+|------------|----------------|
+| `AtributosTab.tsx` | Layout: encabezado + `<AromasSection>` + divisor + `<ColoresSection>` |
+| `AromasSection.tsx` | Orquestador: estado showForm/editAroma/deleteTarget/blockInfo/toggleLoading |
+| `ColoresSection.tsx` | Orquestador: mismo patrón para colores |
+| `AromasList.tsx` | Tabla pura: nombre, descripción, activo (toggle), acciones |
+| `ColoresList.tsx` | Tabla pura: preview hex + nombre, activo, acciones |
+| `AromaForm.tsx` | AdminModal + form: nombre (req), descripción, activo |
+| `ColorForm.tsx` | AdminModal + form: nombre (req), codigoHex (color picker + text), activo |
+| `ColorPreview.tsx` | Círculo de color 18×18px. Usado también en ProductFields y ProductoAtributos |
+| `AtributoDeleteModal.tsx` | blockInfo===null→spinner \| deps>0→bloqueado \| deps===0→ConfirmDialog |
 
 ### Configuración — `settings/Settings.tsx`
-- Carga inicial: `getDoc(doc(db,'settings','general'))` (no onSnapshot)
-- Campos: storeName, description, **address**, email, phone, social (instagram, facebook, whatsapp, tiktok)
-- Logo: file input → `uploadBytes` a ruta fija `logos/store-logo.{ext}` → `getDownloadURL`
-- Guardar: `setDoc(..., { merge: true })` con `serverTimestamp()`
-- Banner éxito verde 3 segundos; error en caja roja
+3 tabs: General | Redes Sociales | Hero. Componentes en `settings/tabs/`:
+- `SettingsGeneral.tsx` — storeName, description, address, email, phone, logo
+- `SettingsSocial.tsx` — instagram, facebook, tiktok, whatsapp
+- `SettingsHero.tsx` — heroEyebrow, heroTitulo, heroSubtitulo + bloque video
+
+Carga inicial: `getDoc(doc(db,'settings','general'))` (no onSnapshot).
+Guardar: `setDoc(..., { merge: true })` + `serverTimestamp()`. Banner éxito verde 3 s.
 
 ### Shared UI — `shared/`
 - **`AdminModal.tsx`**: overlay fixed zIndex 50, cierra con X / click overlay / ESC, bloquea scroll del body
-- **`ConfirmDialog.tsx`**: wrapper sobre AdminModal, botón "Cancelar" (gris) + "Eliminar" (rojo `#DC2626`)
+- **`ConfirmDialog.tsx`**: wrapper sobre AdminModal, botón "Cancelar" (gris) + "Eliminar" (rojo `var(--vsm-error)`)
 
 ---
 
@@ -250,18 +312,24 @@ Exports: `auth`, `db`, `storage`.
 ### Colecciones Firestore
 | Colección | Campos clave |
 |-----------|-------------|
-| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `categoryName`, `subcategoryId?`, `subcategoryName?`, `imageUrl`, `images?`, `aroma?`, `active`, `createdAt`, `updatedAt` |
+| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `categoryName`, `subcategoryId?`, `subcategoryName?`, `imageUrl`, `images?`, `aroma?` (legacy), `aromaId?`, `aromaNombre?`, `colorId?`, `colorNombre?`, `colorHex?`, `active`, `createdAt`, `updatedAt` |
 | `categories` | `name`, `description?`, `active`, `createdAt` |
 | `subcategories` | `name`, `description?`, `categoryId`, `categoryName`, `active`, `createdAt` |
-| `settings/general` | `storeName`, `logoUrl`, `description`, `address?`, `email`, `phone`, `social`, `updatedAt` |
+| `aromas` | `nombre`, `descripcion?`, `activo`, `creadoEn` |
+| `colores` | `nombre`, `codigoHex?`, `activo`, `creadoEn` |
+| `settings/general` | `storeName`, `logoUrl`, `description`, `address?`, `email`, `phone`, `social`, `heroVideoURL?`, `heroEyebrow?`, `heroTitulo?`, `heroSubtitulo?`, `updatedAt` |
 | `messages` | `name`, `email`, `subject`, `message`, `createdAt`, `read` |
 
 ### Backward compat — campo `active` en products
 Productos en Firestore sin campo `active`: `where('active','==',true)` NO los devuelve → no aparecen en CatalogPage. `ProductsSection` (homepage) usa `p.active !== false` → siguen visibles. Al editar y guardar desde admin se escribe `active: true` → se integran al nuevo sistema.
 
+### Backward compat — campo `aroma` (string) en products
+`ProductoAtributos` muestra `aromaNombre || aroma`. Al editar un producto legacy desde admin, si `aromaId` queda vacío el campo `aroma` original no se sobreescribe.
+
 ### Storage paths
 - `logos/store-logo.{ext}` — logo de la tienda (ruta fija, siempre sobreescribe)
-- `products/{productId}/image.{ext}` — imagen por producto
+- `products/{productId}/image-{timestamp}-{index}.{ext}` — imágenes por producto
+- `hero/hero-video.{ext}` — video del hero
 
 ### Reglas Firestore
 ```
@@ -269,6 +337,8 @@ match /settings/{id}      { allow read: if true; allow write: if request.auth !=
 match /products/{id}      { allow read: if true; allow write: if request.auth != null; }
 match /categories/{id}    { allow read: if true; allow write: if request.auth != null; }
 match /subcategories/{id} { allow read: if true; allow write: if request.auth != null; }
+match /aromas/{id}        { allow read: if true; allow write: if request.auth != null; }
+match /colores/{id}       { allow read: if true; allow write: if request.auth != null; }
 match /messages/{id}      { allow read: if request.auth != null; allow write: if true; }
 ```
 
@@ -295,13 +365,14 @@ setPersistence(auth, browserSessionPersistence)
 ## Services (`src/services/`)
 
 ### `settingsService.ts`
-Encapsula toda la lógica Firebase de configuración de la tienda. `Settings.tsx` no importa Firebase directamente.
-
 | Función | Descripción |
 |---------|-------------|
 | `fetchSettings()` | `getDoc` de `settings/general` → `StoreSettings \| null` |
 | `uploadLogo(file)` | Sube a `logos/store-logo.{ext}` → retorna download URL |
 | `saveSettings(data, logoUrl)` | `setDoc` con `merge: true` + `serverTimestamp()` |
+| `savePartialSettings(data)` | `setDoc` parcial — usado por tabs independientes |
+| `uploadHeroVideo(file, onProgress)` | Upload con progreso → guarda URL en settings |
+| `deleteHeroVideo(videoUrl)` | Borra de Storage + limpia `heroVideoURL` en Firestore |
 
 ### `categoryService.ts`
 | Función | Descripción |
@@ -319,32 +390,57 @@ Encapsula toda la lógica Firebase de configuración de la tienda. `Settings.tsx
 | `toggleSubcategoryActive(id, currentlyActive)` | `updateDoc({ active: !currentlyActive })` |
 | `updateSubcategoryName(id, newName)` | `writeBatch`: subcategoría + `subcategoryName` en productos |
 
+### `aromas.service.ts`
+| Función | Descripción |
+|---------|-------------|
+| `checkAromaDependencies(id)` | Retorna `{ activeProducts[] }` con `aromaId == id` |
+| `deleteAroma(id)` | Soft delete: `updateDoc({ activo: false })` |
+| `toggleAromaActive(id, currentlyActive)` | `updateDoc({ activo: !currentlyActive })` |
+| `saveAroma(data, id?)` | `addDoc` (nuevo) o `updateDoc` (editar) en colección `aromas` |
+
+### `colores.service.ts`
+| Función | Descripción |
+|---------|-------------|
+| `checkColorDependencies(id)` | Retorna `{ activeProducts[] }` con `colorId == id` |
+| `deleteColor(id)` | Soft delete: `updateDoc({ activo: false })` |
+| `toggleColorActive(id, currentlyActive)` | `updateDoc({ activo: !currentlyActive })` |
+| `saveColor(data, id?)` | `addDoc` (nuevo) o `updateDoc` (editar) en colección `colores` |
+
 ---
 
-## Hooks y Types
+## Hooks (`src/hooks/`)
 
-### `src/hooks/useCarousel.ts`
-- `useCarousel({ count, autoIntervalMs?, pauseAfterMs? })` → `{ idx, fading, goTo }`
-- Encapsula: estado `idx` + `fading`, auto-rotate con interval, clamp al cambiar `count`, refs `fadingRef`/`pausedRef`/`pauseTimerRef` (no generan re-renders)
-- Usado por `HeroCarousel` (en HeroSection) y `ProductCarousel`
+| Hook | Retorna | Descripción |
+|------|---------|-------------|
+| `useCollection<T>(col, ...constraints)` | `{ data, loading }` | Genérico: `onSnapshot` + unsubscribe. Ordenar client-side con `useMemo` (evita índices compuestos). |
+| `useSettings()` | `{ settings, loading }` | `onSnapshot` de `settings/general`. Usado en Menu y ContactPage. |
+| `useCarousel({ count, autoIntervalMs?, pauseAfterMs? })` | `{ idx, fading, goTo }` | Auto-rotate, pausa manual, clamp. Usado por HeroCarousel y ProductCarousel. |
+| `useFilePickerReset()` | `resetTimer()` | Despacha click sintético para resetear timer de inactividad tras file picker. |
+| `useAromas()` | `{ data: Aroma[], loading }` | Todos los aromas (activos e inactivos). Para admin. |
+| `useColores()` | `{ data: Color[], loading }` | Todos los colores (activos e inactivos). Para admin. |
+| `useAtributosProducto()` | `{ aromas, colores, loading }` | Solo activos (`where('activo','==',true)`). Para selects del ProductForm. |
 
-### `src/hooks/useSettings.ts`
-- `onSnapshot` en `doc(db,'settings','general')`
-- Error handler silencioso
-- Retorna `{ settings: StoreSettings | null, loading: boolean }`
-- Usado en `Menu.tsx` y `ContactPage.tsx`
+---
 
-### `src/hooks/useFilePickerReset.ts`
-- Retorna `resetTimer()`: despacha un `click` sintético en `document`
-- Usar en el `onChange` de cualquier `<input type="file">` para resetear el timer de inactividad
+## Types (`src/types/admin.ts`)
 
-### `src/hooks/useCollection.ts`
-- Genérico: `useCollection<T>(collectionName, ...constraints)` → `{ data: T[], loading: boolean }`
-- Suscribe con `onSnapshot`, mapea docs a `{ id, ...data }`, hace unsubscribe en cleanup
-- **Nota**: combinar `where` + `orderBy` requiere índice compuesto en Firestore. Preferir ordenar client-side con `useMemo`.
+Interfaces principales: `Product`, `Category`, `Subcategory`, `Aroma`, `Color`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `AromaFormData`, `ColorFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData`
 
-### `src/types/admin.ts`
-Interfaces: `Product`, `Category`, `Subcategory`, `SocialLinks`, `StoreSettings` (incluye `address?: string`), `ProductFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData` (incluye `address: string`), `AdminSection`, `ProductsTab`
+Tipos union: `AdminSection = 'dashboard' | 'productos' | 'configuracion'`
+`ProductsTab = 'productos' | 'categorias' | 'atributos'`
+
+---
+
+## Estilos compartidos (`src/styles/formStyles.ts`)
+
+| Export | Uso |
+|--------|-----|
+| `inputStyle` | Aplicar a `<input>`, `<textarea>`, `<select>` |
+| `labelStyle` | Labels de formulario |
+| `errorBox` / `errorText` | Caja de error roja |
+| `successBox` / `successText` | Caja de éxito verde |
+| `primaryBtn` | Botón principal brand, ancho completo |
+| `onFocusBrand` / `onBlurGray` | Handlers `onFocus`/`onBlur` para bordes |
 
 ---
 
