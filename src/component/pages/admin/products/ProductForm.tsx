@@ -3,12 +3,11 @@ import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/fi
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { db, storage } from '../../../../firebase/firebase.config'
 import type { Product, Category, Subcategory, ProductFormData } from '../../../../types/admin'
-import AdminModal               from '../shared/AdminModal'
-import useFilePickerReset       from '../../../../hooks/useFilePickerReset'
-import { useAtributosProducto } from '../../../../hooks/useAtributosProducto'
-import { errorBox, errorText }  from '../../../../styles/formStyles'
-import ProductFields            from './form/ProductFields'
-import ProductImageManager      from './form/ProductImageManager'
+import AdminModal          from '../shared/AdminModal'
+import useFilePickerReset  from '../../../../hooks/useFilePickerReset'
+import { errorBox, errorText } from '../../../../styles/formStyles'
+import ProductFields       from './form/ProductFields'
+import ProductImageManager from './form/ProductImageManager'
 
 interface Props {
   isOpen:        boolean
@@ -21,18 +20,16 @@ interface Props {
 const emptyForm: ProductFormData = {
   name: '', description: '', price: '', stock: '',
   categoryId: '', subcategoryId: '', imageUrl: '', active: true,
-  aromaId: '', aromaNombre: '', colorId: '', colorNombre: '', colorHex: '',
 }
 
 const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Props) => {
   const resetTimer = useFilePickerReset()
-  const { aromas, colores } = useAtributosProducto()
 
-  const [formData, setFormData]       = useState<ProductFormData>(emptyForm)
-  const [images, setImages]           = useState<string[]>([])
+  const [formData, setFormData]         = useState<ProductFormData>(emptyForm)
+  const [images, setImages]             = useState<string[]>([])
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
-  const [error, setError]             = useState<string | null>(null)
-  const [loading, setLoading]         = useState(false)
+  const [error, setError]               = useState<string | null>(null)
+  const [loading, setLoading]           = useState(false)
 
   useEffect(() => {
     if (!isOpen) return
@@ -45,11 +42,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
       subcategoryId: product.subcategoryId ?? '',
       imageUrl:      product.imageUrl,
       active:        product.active !== false,
-      aromaId:       product.aromaId    ?? '',
-      aromaNombre:   product.aromaNombre ?? '',
-      colorId:       product.colorId    ?? '',
-      colorNombre:   product.colorNombre ?? '',
-      colorHex:      product.colorHex   ?? '',
     } : emptyForm)
     setImages(
       product?.images?.length ? product.images
@@ -65,12 +57,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
 
   const handleCategoryChange = (catId: string) =>
     setFormData(prev => ({ ...prev, categoryId: catId, subcategoryId: '' }))
-
-  const handleAromaChange = (id: string, nombre: string) =>
-    setFormData(prev => ({ ...prev, aromaId: id, aromaNombre: nombre }))
-
-  const handleColorChange = (id: string, nombre: string, hex: string) =>
-    setFormData(prev => ({ ...prev, colorId: id, colorNombre: nombre, colorHex: hex }))
 
   const uploadFile = async (file: File, productId: string, index: number): Promise<string> => {
     const ext = file.name.split('.').pop()
@@ -99,11 +85,6 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
         subcategoryId:   formData.subcategoryId || null,
         subcategoryName: selectedSub?.name ?? null,
         active:          formData.active,
-        aromaId:         formData.aromaId    || null,
-        aromaNombre:     formData.aromaNombre || null,
-        colorId:         formData.colorId    || null,
-        colorNombre:     formData.colorNombre || null,
-        colorHex:        formData.colorHex   || null,
       }
 
       if (product) {
@@ -167,12 +148,8 @@ const ProductForm = ({ isOpen, onClose, product, categories, subcategories }: Pr
             formData={formData}
             categories={categories}
             subcategories={subcategories}
-            aromas={aromas}
-            colores={colores}
             onChange={handleChange}
             onCategoryChange={handleCategoryChange}
-            onAromaChange={handleAromaChange}
-            onColorChange={handleColorChange}
           />
 
           <ProductImageManager

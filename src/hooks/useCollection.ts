@@ -30,10 +30,17 @@ function useCollection<T>(
       ? query(collection(db, collectionName), ...constraints)
       : collection(db, collectionName)
 
-    const unsub = onSnapshot(ref, (snap) => {
-      setData(snap.docs.map(d => ({ id: d.id, ...d.data() } as T)))
-      setLoading(false)
-    })
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        setData(snap.docs.map(d => ({ id: d.id, ...d.data() } as T)))
+        setLoading(false)
+      },
+      (err) => {
+        console.error(`[useCollection] Error en colección "${collectionName}":`, err.message)
+        setLoading(false)
+      },
+    )
 
     return () => unsub()
     // eslint-disable-next-line react-hooks/exhaustive-deps

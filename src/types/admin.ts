@@ -12,12 +12,6 @@ export interface Product {
   subcategoryName?: string
   imageUrl: string
   images?: string[]      // array de 1-5 URLs; si existe toma precedencia sobre imageUrl
-  aroma?: string         // backward compat: campo string antiguo
-  aromaId?: string | null
-  aromaNombre?: string | null
-  colorId?: string | null
-  colorNombre?: string | null
-  colorHex?: string | null
   active: boolean        // backwards compat: filter with p.active !== false
   createdAt: Timestamp
   updatedAt: Timestamp
@@ -87,11 +81,6 @@ export interface ProductFormData {
   subcategoryId: string
   imageUrl: string  // kept for backwards compat — always mirrors images[0]
   active: boolean
-  aromaId: string
-  aromaNombre: string
-  colorId: string
-  colorNombre: string
-  colorHex: string
 }
 
 export interface AromaFormData {

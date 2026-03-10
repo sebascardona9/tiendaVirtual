@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { getDoc, getDocs, doc, collection } from 'firebase/firestore'
+import { onSnapshot, getDocs, doc, collection } from 'firebase/firestore'
 import { db } from '../../../firebase/firebase.config'
 import type { Product, Category } from '../../../types/admin'
-import SkeletonDetail   from './components/SkeletonDetail'
-import NotFoundProduct  from './components/NotFoundProduct'
-import ProductGallery   from './components/ProductGallery'
-import ProductInfo      from './components/ProductInfo'
+import SkeletonDetail  from './components/SkeletonDetail'
+import NotFoundProduct from './components/NotFoundProduct'
+import ProductGallery  from './components/ProductGallery'
+import ProductInfo     from './components/ProductInfo'
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>()
@@ -20,18 +20,33 @@ const ProductDetail = () => {
     if (!id) return
     setLoading(true)
     setNotFound(false)
+    setProduct(null)
 
-    Promise.all([
-      getDoc(doc(db, 'products', id)),
-      getDocs(collection(db, 'categories')),
-    ])
-      .then(([productSnap, categoriesSnap]) => {
-        if (!productSnap.exists()) { setNotFound(true); return }
-        setProduct({ id: productSnap.id, ...productSnap.data() } as Product)
-        setCategories(categoriesSnap.docs.map(d => ({ id: d.id, ...d.data() } as Category)))
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false))
+    // Suscripción en tiempo real al producto — garantiza datos frescos en todos los navegadores
+    const unsub = onSnapshot(
+      doc(db, 'products', id),
+      (snap) => {
+        if (!snap.exists()) {
+          setNotFound(true)
+          setLoading(false)
+          return
+        }
+        setProduct({ id: snap.id, ...snap.data() } as Product)
+        setLoading(false)
+      },
+      (err) => {
+        console.error('[ProductDetail] Error cargando producto:', err.message)
+        setNotFound(true)
+        setLoading(false)
+      },
+    )
+
+    // Categorías: se leen una sola vez (cambian poco, no requieren RT)
+    getDocs(collection(db, 'categories'))
+      .then(snap => setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category))))
+      .catch(err => console.error('[ProductDetail] Error cargando categorías:', err.message))
+
+    return () => unsub()
   }, [id])
 
   if (loading)              return <SkeletonDetail />

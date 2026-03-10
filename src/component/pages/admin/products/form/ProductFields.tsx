@@ -1,21 +1,16 @@
 import { useMemo } from 'react'
-import type { Category, Subcategory, ProductFormData, Aroma, Color } from '../../../../../types/admin'
+import type { Category, Subcategory, ProductFormData } from '../../../../../types/admin'
 import { inputStyle, labelStyle, onFocusBrand, onBlurGray } from '../../../../../styles/formStyles'
-import ColorPreview from '../../../admin/settings/atributos/ColorPreview'
 
 interface Props {
   formData:         ProductFormData
   categories:       Category[]
   subcategories:    Subcategory[]
-  aromas:           Aroma[]
-  colores:          Color[]
   onChange:         (field: keyof ProductFormData, value: string | number | boolean) => void
   onCategoryChange: (catId: string) => void
-  onAromaChange:    (id: string, nombre: string) => void
-  onColorChange:    (id: string, nombre: string, hex: string) => void
 }
 
-const ProductFields = ({ formData, categories, subcategories, aromas, colores, onChange, onCategoryChange, onAromaChange, onColorChange }: Props) => {
+const ProductFields = ({ formData, categories, subcategories, onChange, onCategoryChange }: Props) => {
   const filteredSubs = useMemo(
     () => subcategories.filter(s => s.categoryId === formData.categoryId && s.active),
     [subcategories, formData.categoryId],
@@ -95,56 +90,6 @@ const ProductFields = ({ formData, categories, subcategories, aromas, colores, o
           </select>
         </div>
       )}
-
-      {/* Aroma */}
-      <div>
-        <label style={labelStyle}>Aroma</label>
-        <select
-          value={formData.aromaId}
-          onChange={e => {
-            const id = e.target.value
-            const found = aromas.find(a => a.id === id)
-            onAromaChange(id, found?.nombre ?? '')
-          }}
-          style={{ ...inputStyle, cursor: 'pointer' }}
-          onFocus={onFocusBrand} onBlur={onBlurGray}
-        >
-          <option value="">Sin aroma / No aplica</option>
-          {aromas.map(a => (
-            <option key={a.id} value={a.id}>{a.nombre}</option>
-          ))}
-        </select>
-      </div>
-
-      {/* Color */}
-      <div>
-        <label style={labelStyle}>Color</label>
-        <select
-          value={formData.colorId}
-          onChange={e => {
-            const id = e.target.value
-            const found = colores.find(c => c.id === id)
-            onColorChange(id, found?.nombre ?? '', found?.codigoHex ?? '')
-          }}
-          style={{ ...inputStyle, cursor: 'pointer' }}
-          onFocus={onFocusBrand} onBlur={onBlurGray}
-        >
-          <option value="">Sin color / No aplica</option>
-          {colores.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.nombre}{c.codigoHex ? ` (${c.codigoHex})` : ''}
-            </option>
-          ))}
-        </select>
-        {formData.colorId && formData.colorHex && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
-            <ColorPreview hex={formData.colorHex} size={16} />
-            <span style={{ fontSize: '12px', color: 'var(--vsm-gray-mid)', fontFamily: 'monospace' }}>
-              {formData.colorHex}
-            </span>
-          </div>
-        )}
-      </div>
 
       {/* Activo */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
