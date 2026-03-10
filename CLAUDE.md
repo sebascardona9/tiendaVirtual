@@ -210,20 +210,33 @@ Ruta `/contacto`. Componentes extraídos en `contacto/components/` (SRP):
 
 **`src/component/pages/producto/ProductDetail.tsx`** — página de detalle:
 - Ruta `/producto/:id`; obtiene el ID de `useParams()`
-- `Promise.all` para cargar producto + categorías desde Firestore en paralelo
+- Producto: `onSnapshot` en tiempo real (garantiza datos frescos en todos los navegadores)
+- Categorías: `getDocs` una sola vez (cambian poco, no requieren RT)
 - Columna izquierda (60%): `<ProductGallery>` — imagen principal con zoom + fade, miniaturas
-- Columna derecha (40%): `<ProductInfo>` — badge categoría, nombre, precio, descripción, `<ProductoAtributos>`, stock, cantidad, botón carrito
+- Columna derecha (40%): `<ProductInfo>` — nombre, precio, badge categoría, descripción, `<ProductoAtributosSelector>`, stock, cantidad, botón carrito
 - Skeleton loader (`<SkeletonDetail>`); página 404 amigable (`<NotFoundProduct>`)
 - Responsive: `grid-cols-1` → `grid-cols-[3fr_2fr]`
 - Componentes extraídos en `producto/components/` (SRP)
 
-**`ProductoAtributos.tsx`** — muestra aroma y color del producto:
-- Backward compat: `aromaNombre || aroma` (campo legacy string)
-- Si no hay ningún atributo → `return null`
-- Muestra `<ColorPreview>` con el hex del color si existe
+**Selectores de aroma y color — `producto/components/`** (SRP):
+
+| Componente | Responsabilidad |
+|------------|----------------|
+| `ProductoAtributosSelector.tsx` | Orquestador: carga aromas/colores activos via `useAtributosProducto`, maneja estado de selección, comunica validez al padre |
+| `ProductoAromaSelector.tsx` | Chips seleccionables de aroma. Hoja pura — sin estado ni efectos |
+| `ProductoColorSwatch.tsx` | Swatches circulares con `codigoHex`. Hoja pura — sin estado ni efectos |
+
+- Aromas y colores son **atributos globales de la tienda**, NO campos del producto. El cliente los elige al momento de comprar.
+- Los selectores se muestran **solo si hay ítems activos** en Firestore — `return null` si ambas colecciones están vacías.
+- Ninguno pre-seleccionado por defecto. Selección requerida antes de agregar al carrito (validación en `ProductInfo`).
+- `ProductoAtributos.tsx` — archivo deprecado, stub vacío. Ya no se usa.
+
+**`ProductInfo.tsx`** — columna derecha del detalle:
+- Estado `atributosOk` (bool) actualizado por `ProductoAtributosSelector` via `onValidChange`
+- Estado `showAtributosError` (bool): se activa al pulsar "Agregar al carrito" sin selección completa
+- `handleValidChange` memoizado con `useCallback` para evitar re-renders del selector
 
 **`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
-**`Product.aroma?: string`** — campo legacy; usar `aromaNombre` en productos nuevos
 **`Product.active: boolean`** — backwards compat: filtrar con `p.active !== false` en homepage; `where('active','==',true)` en CatalogPage
 
 ### Footer (`src/component/pages/footer/`)
@@ -257,12 +270,11 @@ Panel completo accesible en `/#/Admin` (protegida por `ProtecterRouter`).
 
 ### Formulario producto — `products/ProductForm.tsx`
 - Modo create (`!product`) vs edit (`!!product`)
-- Usa `useAtributosProducto()` para poblar selects de aroma y color
-- Handlers: `handleAromaChange(id, nombre)` / `handleColorChange(id, nombre, hex)`
-- Al guardar: incluye `categoryName`, `subcategoryName`, `aromaId/aromaNombre`, `colorId/colorNombre/colorHex` desnormalizados; `null` si no aplica
+- Campos: nombre, descripción, precio, stock, categoría, subcategoría, activo, imágenes
+- **No incluye selectores de aroma ni color** — esos son atributos globales que el cliente elige al comprar
 - Flujo create con imagen: `addDoc` → obtener ID → `uploadBytes` → `updateDoc` con URL
 - Componentes extraídos en `products/form/` (SRP):
-  - `ProductFields.tsx` — campos nombre, descripción, precio, stock, categoría, subcategoría, aroma, color, activo
+  - `ProductFields.tsx` — nombre, descripción, precio, stock, categoría, subcategoría, activo
   - `ProductImageManager.tsx` — gestión de imágenes (upload, reorder, delete)
 
 ### Categorías — `products/CategoryList.tsx`
@@ -286,7 +298,7 @@ Gestión de aromas y colores. Componentes en `settings/atributos/` (SRP):
 | `ColoresList.tsx` | Tabla pura: preview hex + nombre, activo, acciones |
 | `AromaForm.tsx` | AdminModal + form: nombre (req), descripción, activo |
 | `ColorForm.tsx` | AdminModal + form: nombre (req), codigoHex (color picker + text), activo |
-| `ColorPreview.tsx` | Círculo de color 18×18px. Usado también en ProductFields y ProductoAtributos |
+| `ColorPreview.tsx` | Círculo de color 18×18px. Usado también en `ProductoColorSwatch` |
 | `AtributoDeleteModal.tsx` | blockInfo===null→spinner \| deps>0→bloqueado \| deps===0→ConfirmDialog |
 
 ### Configuración — `settings/Settings.tsx`
@@ -312,7 +324,7 @@ Exports: `auth`, `db`, `storage`.
 ### Colecciones Firestore
 | Colección | Campos clave |
 |-----------|-------------|
-| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `categoryName`, `subcategoryId?`, `subcategoryName?`, `imageUrl`, `images?`, `aroma?` (legacy), `aromaId?`, `aromaNombre?`, `colorId?`, `colorNombre?`, `colorHex?`, `active`, `createdAt`, `updatedAt` |
+| `products` | `name`, `description`, `price`, `stock`, `categoryId`, `categoryName`, `subcategoryId?`, `subcategoryName?`, `imageUrl`, `images?`, `active`, `createdAt`, `updatedAt` |
 | `categories` | `name`, `description?`, `active`, `createdAt` |
 | `subcategories` | `name`, `description?`, `categoryId`, `categoryName`, `active`, `createdAt` |
 | `aromas` | `nombre`, `descripcion?`, `activo`, `creadoEn` |
@@ -322,9 +334,6 @@ Exports: `auth`, `db`, `storage`.
 
 ### Backward compat — campo `active` en products
 Productos en Firestore sin campo `active`: `where('active','==',true)` NO los devuelve → no aparecen en CatalogPage. `ProductsSection` (homepage) usa `p.active !== false` → siguen visibles. Al editar y guardar desde admin se escribe `active: true` → se integran al nuevo sistema.
-
-### Backward compat — campo `aroma` (string) en products
-`ProductoAtributos` muestra `aromaNombre || aroma`. Al editar un producto legacy desde admin, si `aromaId` queda vacío el campo `aroma` original no se sobreescribe.
 
 ### Storage paths
 - `logos/store-logo.{ext}` — logo de la tienda (ruta fija, siempre sobreescribe)
@@ -412,19 +421,21 @@ setPersistence(auth, browserSessionPersistence)
 
 | Hook | Retorna | Descripción |
 |------|---------|-------------|
-| `useCollection<T>(col, ...constraints)` | `{ data, loading }` | Genérico: `onSnapshot` + unsubscribe. Ordenar client-side con `useMemo` (evita índices compuestos). |
+| `useCollection<T>(col, ...constraints)` | `{ data, loading }` | Genérico: `onSnapshot` + unsubscribe + `onError` handler. Ordenar client-side con `useMemo` (evita índices compuestos). |
 | `useSettings()` | `{ settings, loading }` | `onSnapshot` de `settings/general`. Usado en Menu y ContactPage. |
 | `useCarousel({ count, autoIntervalMs?, pauseAfterMs? })` | `{ idx, fading, goTo }` | Auto-rotate, pausa manual, clamp. Usado por HeroCarousel y ProductCarousel. |
 | `useFilePickerReset()` | `resetTimer()` | Despacha click sintético para resetear timer de inactividad tras file picker. |
-| `useAromas()` | `{ data: Aroma[], loading }` | Todos los aromas (activos e inactivos). Para admin. |
-| `useColores()` | `{ data: Color[], loading }` | Todos los colores (activos e inactivos). Para admin. |
-| `useAtributosProducto()` | `{ aromas, colores, loading }` | Solo activos (`where('activo','==',true)`). Para selects del ProductForm. |
+| `useAromas()` | `{ data: Aroma[], loading }` | Todos los aromas (activos e inactivos). Para panel admin. |
+| `useColores()` | `{ data: Color[], loading }` | Todos los colores (activos e inactivos). Para panel admin. |
+| `useAtributosProducto()` | `{ aromas, colores, loading }` | Solo activos (`where('activo','==',true)`). Para `ProductoAtributosSelector` en página pública. |
 
 ---
 
 ## Types (`src/types/admin.ts`)
 
 Interfaces principales: `Product`, `Category`, `Subcategory`, `Aroma`, `Color`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `AromaFormData`, `ColorFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData`
+
+> `Product` ya NO tiene campos de aroma/color. Aromas y colores son atributos globales de la tienda gestionados en colecciones independientes. `ProductFormData` tampoco los incluye.
 
 Tipos union: `AdminSection = 'dashboard' | 'productos' | 'configuracion'`
 `ProductsTab = 'productos' | 'categorias' | 'atributos'`
@@ -446,6 +457,7 @@ Tipos union: `AdminSection = 'dashboard' | 'productos' | 'configuracion'`
 
 ## Pendiente (próximas sesiones)
 - Gestión de mensajes recibidos en panel admin (colección `messages`, campo `read`)
+- Conectar selección de aroma/color al carrito cuando se implemente
 - Gestión de pedidos / carrito
 - `browserSessionPersistence` para el panel admin
 
