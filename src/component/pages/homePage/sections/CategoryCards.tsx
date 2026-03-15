@@ -1,7 +1,5 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { where } from 'firebase/firestore'
-import useCollection from '../../../../hooks/useCollection'
 import ProductCarousel from '../../../../ui/carousels/ProductCarousel'
 import Section from '../../../../ui/layout/Section'
 import type { Category, Product } from '../../../../types/admin'
@@ -78,11 +76,9 @@ const CategoryCard = ({ category, products }: CategoryCardProps) => (
 )
 
 // ── CategoryCards ─────────────────────────────────────────────────────────────
-const CategoryCards = () => {
-  const { data: categories, loading: loadingCats } = useCollection<Category>('categories', where('active', '==', true))
-  const { data: products,   loading: loadingProds } = useCollection<Product>('products',   where('active', '==', true))
+interface CategoryCardsProps { products: Product[]; categories: Category[]; loading: boolean }
 
-  const loading = loadingCats || loadingProds
+const CategoryCards = ({ products, categories, loading }: CategoryCardsProps) => {
 
   // Group products by categoryId
   const productsByCategory = useMemo(() => {

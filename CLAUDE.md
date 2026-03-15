@@ -122,28 +122,35 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Links de nav: Inicio | + Productos | Nosotros | Contacto
 
 ### Homepage (`src/component/pages/homePage/`)
-`HomePage.tsx` es un orquestador que compone 5 secciones desde `homePage/sections/`:
+`HomePage.tsx` es el **orquestador de datos y de secciones**. Abre **3 listeners únicos** en Firestore y pasa los datos como props a las 4 secciones:
 
-| Archivo | Sección |
-|---------|---------|
-| `HeroSection.tsx` | Gradiente oscuro cálido, texto, CTA + carrusel dinámico de productos |
-| `CategoryCards.tsx` | "Conoce nuestras Velas" — tarjeta por cada categoría activa con carrusel |
-| `ProductsSection.tsx` | "Nuestros Productos" — grid de `<ProductCard/>` con skeleton loader |
-| `CandleTypesSection.tsx` | "Explora nuestras colecciones" — subcategorías activas con imagen de producto |
-| `ReviewsSection.tsx` | "Lo que dicen nuestros clientes" — 3 testimonios |
+```
+HomePage.tsx
+  ├─ useCollection<Product>('products', where active=true)      → products, loading
+  ├─ useCollection<Category>('categories', where active=true)   → categories, loading
+  └─ useCollection<Subcategory>('subcategories', where active=true) → subcategories, loading
+```
 
-> `NewsletterSection.tsx` fue eliminada.
+> **Optimización de lecturas Firestore**: antes cada sección abría su propio `onSnapshot` sobre `products`, resultando en 4 listeners duplicados. Con el patrón actual se reduce a 1 → ahorra **62% de lecturas** en la página más visitada y triplica el umbral del plan gratuito (de ~15k a ~44k visitas/mes antes de cobrar).
 
-**`HeroSection.tsx`** — carrusel dinámico usando `useCarousel`:
-- `HeroCarousel` — usa `useCollection<Product>('products', where('active','==',true))`
-- Ordena client-side por `createdAt` desc, máximo 8 productos
+| Archivo | Sección | Props recibe |
+|---------|---------|-------------|
+| `HeroSection.tsx` | Carrusel dinámico + texto CTA + video de fondo | `products`, `loading` |
+| `CategoryCards.tsx` | "Conoce nuestras Velas" — tarjeta por cada categoría activa | `products`, `categories`, `loading` |
+| `ProductsSection.tsx` | "Nuestros Productos" — grid de `<ProductCard/>` | `products`, `loading` |
+| `CandleTypesSection.tsx` | "Explora nuestras colecciones" — subcategorías activas | `products`, `subcategories`, `loading` |
+
+> `NewsletterSection.tsx` y `ReviewsSection.tsx` fueron eliminadas (contenido hardcodeado).
+
+**`HeroSection.tsx`** — recibe `{ products, loading }` desde `HomePage`:
+- `HeroCarousel` ordena `products` por `createdAt` desc, máximo 8 — sin llamada a Firestore propia
+- Si hay `heroVideoURL` en settings: muestra video de fondo y oculta el carrusel
 - Rotación automática cada 3 s; pausa 5 s al interactuar manualmente
-- Usa `useCarousel` hook (lógica extraída)
 - Estilos de animación en `HeroSection.css`
 - Responsive: `grid-cols-1` → `lg:grid-cols-2`
+- `useSettings()` sigue llamándose internamente (solo para video/texto hero)
 
-**`CategoryCards.tsx`** — dinámica, conectada a Firestore:
-- `useCollection<Category>` + `useCollection<Product>` (ambos con `where('active','==',true)`)
+**`CategoryCards.tsx`** — recibe `{ products, categories, loading }` desde `HomePage`:
 - `useMemo` → `Map<categoryId, Product[]>` para agrupar productos por categoría
 - Solo muestra categorías con ≥1 producto activo
 - Cada tarjeta contiene `<ProductCarousel>` (rotación cada 5 s) + nombre + descripción + link
@@ -151,15 +158,14 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - Grid: `grid-cols-1 md:grid-cols-2` (3 columnas si ≥3 categorías)
 - Skeleton de 3 tarjetas; estado vacío si no hay categorías con productos
 
-**`CandleTypesSection.tsx`** — subcategorías dinámicas:
-- `useCollection<Subcategory>` + `useCollection<Product>` (ambos `where('active','==',true)`)
+**`CandleTypesSection.tsx`** — recibe `{ products, subcategories, loading }` desde `HomePage`:
 - `useMemo` → `Map<subcategoryId, imageUrl>`: primera imagen disponible de cada subcategoría
 - Si no hay subcategorías activas → `return null` (no ocupa espacio)
 - Cada tarjeta: imagen real del primer producto de esa subcategoría (fallback 🕯️)
 - Link → `/catalogo?categoria=${sub.categoryId}` (pre-selecciona la categoría padre)
 - Grid: `grid-cols-2 md:grid-cols-3 lg:grid-cols-4`
 
-**`ProductsSection.tsx`** — filtra `p.active !== false` client-side (backwards compat).
+**`ProductsSection.tsx`** — recibe `{ products, loading }` desde `HomePage`. Productos ya filtrados con `where active=true`.
 
 ### ContactPage (`src/component/pages/contacto/`)
 Ruta `/contacto`. Componentes extraídos en `contacto/components/` (SRP):

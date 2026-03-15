@@ -1,7 +1,5 @@
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { where } from 'firebase/firestore'
-import useCollection from '../../../../hooks/useCollection'
 import Section from '../../../../ui/layout/Section'
 import type { Subcategory, Product } from '../../../../types/admin'
 
@@ -20,17 +18,9 @@ const SkeletonCard = () => (
   </div>
 )
 
-const CandleTypesSection = () => {
-  const { data: subcategories, loading: loadingSubs } = useCollection<Subcategory>(
-    'subcategories',
-    where('active', '==', true),
-  )
-  const { data: products, loading: loadingProds } = useCollection<Product>(
-    'products',
-    where('active', '==', true),
-  )
+interface CandleTypesSectionProps { products: Product[]; subcategories: Subcategory[]; loading: boolean }
 
-  const loading = loadingSubs || loadingProds
+const CandleTypesSection = ({ products, subcategories, loading }: CandleTypesSectionProps) => {
 
   // Primera imagen disponible por subcategoría
   const imageBySubcategory = useMemo(() => {

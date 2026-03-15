@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
-import { where } from "firebase/firestore"
-import useCollection from "../../../../hooks/useCollection"
 import { useCarousel } from "../../../../hooks/useCarousel"
 import { useSettings } from "../../../../hooks/useSettings"
 import type { Product, StoreSettings } from "../../../../types/admin"
@@ -35,9 +33,9 @@ const EmptyCarousel = () => (
 )
 
 // ── Carousel ──────────────────────────────────────────────────────────────────
-const HeroCarousel = () => {
-  const { data: raw, loading } = useCollection<Product>('products', where('active', '==', true))
+interface HeroCarouselProps { raw: Product[]; loading: boolean }
 
+const HeroCarousel = ({ raw, loading }: HeroCarouselProps) => {
   const products = useMemo(() =>
     [...raw]
       .sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0))
@@ -175,7 +173,9 @@ const HeroText = ({ light, settings }: { light: boolean; settings: StoreSettings
 }
 
 // ── Hero Section ──────────────────────────────────────────────────────────────
-const HeroSection = () => {
+interface HeroSectionProps { products: Product[]; loading: boolean }
+
+const HeroSection = ({ products, loading }: HeroSectionProps) => {
   const { settings, loading: settingsLoading } = useSettings()
   const [videoFailed, setVideoFailed] = useState(false)
 
@@ -225,7 +225,7 @@ const HeroSection = () => {
         <HeroText light={showVideo} settings={settings} />
 
         {/* Carrusel solo en modo sin video */}
-        {!showVideo && <HeroCarousel />}
+        {!showVideo && <HeroCarousel raw={products} loading={loading} />}
       </div>
     </section>
   )

@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom"
-import useCollection from "../../../../hooks/useCollection"
 import ProductCard from "../../../../ui/cards/ProductCard"
 import Section from "../../../../ui/layout/Section"
 import type { Product } from "../../../../types/admin"
@@ -20,11 +19,11 @@ const SkeletonCard = () => (
   </div>
 )
 
-const ProductsSection = () => {
-  const { data: products, loading } = useCollection<Product>('products')
+interface ProductsSectionProps { products: Product[]; loading: boolean }
 
-  // Backwards-compatible filter: products without 'active' field still show
-  const visibleProducts = products.filter(p => p.active !== false)
+const ProductsSection = ({ products, loading }: ProductsSectionProps) => {
+  // products ya vienen filtrados con where('active','==',true) desde HomePage
+  const visibleProducts = products
 
   return (
     <Section style={{ backgroundColor: 'var(--vsm-bg)' }}>
