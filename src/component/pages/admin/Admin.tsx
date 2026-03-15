@@ -1,21 +1,29 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/authContext'
-import type { AdminSection } from '../../../types/admin'
-import Dashboard  from './dashboard/Dashboard'
-import ProductList from './products/ProductList'
-import Settings   from './settings/Settings'
+import type { AdminSection, Message } from '../../../types/admin'
+import useCollection from '../../../hooks/useCollection'
+import Dashboard       from './dashboard/Dashboard'
+import ProductList     from './products/ProductList'
+import Settings        from './settings/Settings'
+import MessagesSection from './messages/MessagesSection'
+import OrdenesPage     from './ordenes/OrdenesPage'
 
 const navItems: { id: AdminSection; label: string }[] = [
   { id: 'dashboard',     label: 'Dashboard'      },
   { id: 'productos',     label: 'Productos'      },
+  { id: 'ordenes',       label: 'Órdenes'        },
   { id: 'configuracion', label: 'Configuración'  },
+  { id: 'mensajes',      label: 'Mensajes'       },
 ]
 
 const AdminPanel = () => {
   const { user, logout }              = useAuth()
   const navigate                      = useNavigate()
   const [section, setSection]         = useState<AdminSection>('dashboard')
+
+  const { data: allMessages } = useCollection<Message>('messages')
+  const unreadCount = useMemo(() => allMessages.filter(m => !m.read).length, [allMessages])
 
   const handleLogout = async () => {
     await logout()
@@ -97,7 +105,22 @@ const AdminPanel = () => {
         >
           {navItems.map(item => (
             <button key={item.id} onClick={() => setSection(item.id)} style={sidebarBtn(item)}>
-              {item.label}
+              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                {item.label}
+                {item.id === 'mensajes' && unreadCount > 0 && (
+                  <span style={{
+                    backgroundColor: section === 'mensajes' ? '#fff' : 'var(--vsm-brand)',
+                    color:           section === 'mensajes' ? 'var(--vsm-brand)' : '#fff',
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    borderRadius: '999px',
+                    padding: '1px 6px',
+                    lineHeight: 1.6,
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
             </button>
           ))}
         </nav>
@@ -125,6 +148,20 @@ const AdminPanel = () => {
               }}
             >
               {item.label}
+              {item.id === 'mensajes' && unreadCount > 0 && (
+                <span style={{
+                  backgroundColor: section === 'mensajes' ? '#fff' : 'var(--vsm-brand)',
+                  color:           section === 'mensajes' ? 'var(--vsm-brand)' : '#fff',
+                  fontSize: '9px',
+                  fontWeight: 700,
+                  borderRadius: '999px',
+                  padding: '0px 5px',
+                  marginLeft: '3px',
+                  verticalAlign: 'middle',
+                }}>
+                  {unreadCount}
+                </span>
+              )}
             </button>
           ))}
         </nav>
@@ -133,7 +170,9 @@ const AdminPanel = () => {
         <main style={{ flex: 1, minWidth: 0 }}>
           {section === 'dashboard'     && <Dashboard />}
           {section === 'productos'     && <ProductList />}
+          {section === 'ordenes'       && <OrdenesPage />}
           {section === 'configuracion' && <Settings />}
+          {section === 'mensajes'      && <MessagesSection />}
         </main>
       </div>
     </div>

@@ -28,7 +28,7 @@ const ContactPage = () => {
             ¿<em style={{ fontStyle: 'italic', color: 'rgba(232,146,74,0.95)' }}>Hablamos</em>?
           </h1>
           <p style={{ color: 'rgba(245,239,228,0.6)', fontSize: '15px', fontWeight: 300, lineHeight: 1.8, maxWidth: '420px', margin: '0 auto' }}>
-            Estamos en Santa Marta, Colombia.<br />Escríbenos y te respondemos pronto.
+            Estamos en Pereira, Colombia.<br />Escríbenos y te respondemos pronto.
           </p>
         </div>
 
@@ -93,7 +93,7 @@ const ContactPage = () => {
           "Cada vela cuenta una historia diferente"
         </blockquote>
         <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '13px', marginTop: '1rem' }}>
-          Hecha a mano con amor desde el Caribe colombiano
+          Hecha a mano con amor desde el eje cafetero colombiano
         </p>
       </section>
     </div>

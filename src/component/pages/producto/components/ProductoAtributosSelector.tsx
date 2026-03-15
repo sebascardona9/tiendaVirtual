@@ -4,11 +4,19 @@ import { useAtributosProducto } from '../../../../hooks/useAtributosProducto'
 import ProductoAromaSelector from './ProductoAromaSelector'
 import ProductoColorSwatch   from './ProductoColorSwatch'
 
+export interface AtributosSeleccion {
+  aroma:    string | null
+  color:    string | null
+  colorHex: string | null
+}
+
 interface Props {
   /** Indica si se debe mostrar el error de campos sin seleccionar */
-  showError:     boolean
+  showError:       boolean
   /** Se llama cada vez que cambia la validez de la selección */
-  onValidChange: (valid: boolean) => void
+  onValidChange:   (valid: boolean) => void
+  /** Se llama cada vez que cambia la selección real (aroma, color, colorHex) */
+  onSelectionChange?: (sel: AtributosSeleccion) => void
 }
 
 /**
@@ -17,15 +25,17 @@ interface Props {
  * Retorna null si no hay ningún atributo activo en la tienda.
  * Comunica al padre si la selección es válida para continuar.
  */
-const ProductoAtributosSelector = ({ showError, onValidChange }: Props) => {
+const ProductoAtributosSelector = ({ showError, onValidChange, onSelectionChange }: Props) => {
   const { aromas, colores, loading } = useAtributosProducto()
 
   const [selectedAroma, setSelectedAroma] = useState<Aroma | null>(null)
   const [selectedColor, setSelectedColor] = useState<Color | null>(null)
 
-  // Ref para evitar recrear el efecto si el padre re-renderiza con nueva función
-  const callbackRef = useRef(onValidChange)
-  useEffect(() => { callbackRef.current = onValidChange })
+  // Refs para evitar recrear efectos si el padre re-renderiza con nuevas funciones
+  const callbackRef   = useRef(onValidChange)
+  const selectionRef  = useRef(onSelectionChange)
+  useEffect(() => { callbackRef.current  = onValidChange })
+  useEffect(() => { selectionRef.current = onSelectionChange })
 
   const hasAromas = !loading && aromas.length > 0
   const hasColors = !loading && colores.length > 0
@@ -36,6 +46,11 @@ const ProductoAtributosSelector = ({ showError, onValidChange }: Props) => {
       (!hasAromas || selectedAroma !== null) &&
       (!hasColors || selectedColor !== null)
     callbackRef.current(valid)
+    selectionRef.current?.({
+      aroma:    selectedAroma?.nombre ?? null,
+      color:    selectedColor?.nombre ?? null,
+      colorHex: selectedColor?.codigoHex ?? null,
+    })
   }, [loading, hasAromas, hasColors, selectedAroma, selectedColor])
 
   if (loading) {

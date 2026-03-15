@@ -114,5 +114,16 @@ export interface SettingsFormData {
   social: SocialLinks
 }
 
-export type AdminSection = 'dashboard' | 'productos' | 'configuracion'
+export interface Message {
+  id: string
+  name: string
+  email: string
+  phone?: string
+  subject: string
+  message: string
+  createdAt: Timestamp
+  read: boolean
+}
+
+export type AdminSection = 'dashboard' | 'productos' | 'configuracion' | 'mensajes' | 'ordenes'
 export type ProductsTab  = 'productos' | 'categorias' | 'atributos'

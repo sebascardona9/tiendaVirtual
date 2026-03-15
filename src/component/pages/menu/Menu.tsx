@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../auth/authContext"
 import { useSettings } from '../../../hooks/useSettings'
+import { useCartContext } from '../../../context/CartContext'
 import logoImg from '../../../assets/Images/Logo.jpeg'
 
 const navLinks = [
@@ -14,6 +15,7 @@ const Menu = () => {
     const { user, logout } = useAuth()
     const navigate = useNavigate()
     const { settings, loading } = useSettings()
+    const { totalItems } = useCartContext()
     const logoSrc = settings?.logoUrl || logoImg
 
     const handleLogout = async () => {
@@ -80,6 +82,15 @@ const Menu = () => {
 
                 {/* Right: cambia según auth */}
                 <div className="flex items-center gap-4">
+                    {/* Icono carrito */}
+                    <NavLink to="/carrito" style={{ position: 'relative', display: 'flex', alignItems: 'center', color: '#111', textDecoration: 'none' }} className="hover:opacity-60 transition-opacity">
+                        <span style={{ fontSize: '1.25rem' }}>🛒</span>
+                        {totalItems > 0 && (
+                            <span style={{ position: 'absolute', top: '-6px', right: '-8px', backgroundColor: 'var(--vsm-brand)', color: '#fff', fontSize: '10px', fontWeight: 800, borderRadius: '999px', minWidth: '17px', height: '17px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', lineHeight: 1 }}>
+                                {totalItems}
+                            </span>
+                        )}
+                    </NavLink>
                     {user ? (
                         // Usuario autenticado
                         <>

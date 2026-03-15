@@ -4,7 +4,7 @@ import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../../../../firebase/firebase.config'
 import '../ContactPage.css'
 
-interface FormState { name: string; email: string; subject: string; message: string }
+interface FormState { name: string; email: string; phone: string; subject: string; message: string }
 
 const SUBJECTS = ['Consulta sobre producto', 'Pedido personalizado', 'Envíos y entregas', 'Otro']
 
@@ -37,7 +37,7 @@ const focusBrand = (e: FocusEvent<FieldEl>) => { e.currentTarget.style.borderCol
 const blurGray   = (e: FocusEvent<FieldEl>) => { e.currentTarget.style.borderColor = 'var(--vsm-gray)'  }
 
 const ContactForm = () => {
-  const [form, setForm]     = useState<FormState>({ name: '', email: '', subject: SUBJECTS[0], message: '' })
+  const [form, setForm]     = useState<FormState>({ name: '', email: '', phone: '', subject: SUBJECTS[0], message: '' })
   const [errors, setErrors] = useState<Partial<FormState>>({})
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -67,14 +67,16 @@ const ContactForm = () => {
       await addDoc(collection(db, 'messages'), {
         name:      form.name.trim(),
         email:     form.email.trim(),
+        phone:     form.phone.trim(),
         subject:   form.subject,
         message:   form.message.trim(),
         createdAt: serverTimestamp(),
         read:      false,
       })
       setSuccess(true)
-      setForm({ name: '', email: '', subject: SUBJECTS[0], message: '' })
-    } catch {
+      setForm({ name: '', email: '', phone: '', subject: SUBJECTS[0], message: '' })
+    } catch (err) {
+      console.error('[ContactForm] Error al guardar mensaje:', err)
       setError('Hubo un problema al enviar el mensaje. Intenta de nuevo.')
     } finally {
       setLoading(false)
@@ -124,6 +126,14 @@ const ContactForm = () => {
           style={{ ...inputBase, borderColor: errors.email ? '#DC2626' : 'var(--vsm-gray)' }}
           onFocus={focusBrand} onBlur={blurGray} />
         {errors.email && <p style={{ fontSize: '12px', color: '#DC2626', marginTop: '4px' }}>{errors.email}</p>}
+      </div>
+
+      <div>
+        <label style={labelStyle}>Teléfono de contacto</label>
+        <input type="tel" value={form.phone} onChange={e => setField('phone', e.target.value)}
+          placeholder="+57 300 000 0000"
+          style={inputBase}
+          onFocus={focusBrand} onBlur={blurGray} />
       </div>
 
       <div>

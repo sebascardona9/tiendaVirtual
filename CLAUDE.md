@@ -85,6 +85,9 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 | `/catalogo` | `CatalogPage` | No |
 | `/contacto` | `ContactPage` | No |
 | `/producto/:id` | `ProductDetail` | No |
+| `/carrito` | `CartPage` | No |
+| `/checkout` | `CheckoutPage` | No |
+| `/orden-confirmada` | `OrdenConfirmadaPage` | No |
 | `/Login` | `Login` | No |
 | `/Register` | `Register` | No |
 | `/Admin` | `AdminPanel` | Sí — `ProtecterRouter` |
@@ -114,6 +117,7 @@ React 19 + TypeScript + Vite 7 SPA. Firebase Auth + Firestore + Storage. React R
 - **Reactivo al auth**: cuando `user` existe muestra "Admin" + botón "Cerrar sesión"; cuando no hay sesión muestra "Ingresar" + "Registro"
 - **Logo dinámico**: usa `useSettings()` → `settings?.logoUrl || logoImg` (fallback a `Logo.jpeg`)
 - **Nombre dinámico**: si `settings?.storeName` existe lo muestra en el navbar
+- **Icono carrito** con badge: usa `useCartContext()` → `totalItems`. Badge ámbar `var(--vsm-brand)` con contador. Solo visible si `totalItems > 0`.
 - Logo estático fallback: `src/assets/Images/Logo.jpeg`
 - Links de nav: Inicio | + Productos | Nosotros | Contacto
 
@@ -169,7 +173,7 @@ Ruta `/contacto`. Componentes extraídos en `contacto/components/` (SRP):
 - **Hero**: `minHeight: 60vh`, fondo `#1A1208`, radial glow ámbar, título Cormorant italic peso 300
 - **Sección principal** (2 columnas `grid auto-fit minmax(300px,1fr)`): info cards a la izquierda, formulario a la derecha
 - **Quote banner**: fondo oscuro, frase italic
-- Datos de contacto desde `useSettings()`; formulario guarda `{ name, email, subject, message, createdAt, read: false }`
+- Datos de contacto desde `useSettings()`; formulario guarda `{ name, email, phone, subject, message, createdAt, read: false }`
 - Estilos en `ContactPage.css` (spinner + keyframe `contactFadeUp`)
 
 ### CatalogPage (`src/component/pages/catalog/CatalogPage.tsx`)
@@ -234,7 +238,10 @@ Ruta `/contacto`. Componentes extraídos en `contacto/components/` (SRP):
 **`ProductInfo.tsx`** — columna derecha del detalle:
 - Estado `atributosOk` (bool) actualizado por `ProductoAtributosSelector` via `onValidChange`
 - Estado `showAtributosError` (bool): se activa al pulsar "Agregar al carrito" sin selección completa
-- `handleValidChange` memoizado con `useCallback` para evitar re-renders del selector
+- Estado `seleccion: AtributosSeleccion` actualizado via `onSelectionChange`
+- Estado `addedFeedback` (bool): botón se pone verde y muestra "¡Agregado! ✓" durante 2 s
+- `handleAddToCart` llama `agregarItem({ productoId, nombre, precio, imagen, cantidad, stock, aroma, color, colorHex })`
+- `handleValidChange` y `handleSelectionChange` memoizados con `useCallback`
 
 **`Product.images?: string[]`** — campo opcional; backwards compatible con `imageUrl`
 **`Product.active: boolean`** — backwards compat: filtrar con `p.active !== false` en homepage; `where('active','==',true)` en CatalogPage
@@ -252,8 +259,9 @@ Panel completo accesible en `/#/Admin` (protegida por `ProtecterRouter`).
 ### Shell — `Admin.tsx`
 - Layout: header (título + saludo + logout) + sidebar 200px desktop / tab row mobile + `<main>`
 - Saludo: `user?.displayName ?? user?.email ?? 'Admin'`
-- Secciones: `dashboard` | `productos` | `configuracion` (tipo `AdminSection`)
+- Secciones: `dashboard` | `productos` | `ordenes` | `configuracion` | `mensajes` (tipo `AdminSection`)
 - Sidebar activo: `backgroundColor: var(--vsm-brand)`, blanco; inactivo: transparente, `var(--vsm-gray-mid)`
+- Badge de mensajes no leídos: `useCollection<Message>('messages')` → filtra `!m.read` → muestra contador en sidebar y tab mobile
 
 ### Dashboard — `dashboard/Dashboard.tsx`
 - Dos `onSnapshot` simultáneos: `collection(db,'products')` + `collection(db,'categories')`
@@ -301,6 +309,22 @@ Gestión de aromas y colores. Componentes en `settings/atributos/` (SRP):
 | `ColorPreview.tsx` | Círculo de color 18×18px. Usado también en `ProductoColorSwatch` |
 | `AtributoDeleteModal.tsx` | blockInfo===null→spinner \| deps>0→bloqueado \| deps===0→ConfirmDialog |
 
+### Mensajes — `messages/MessagesSection.tsx`
+Gestión de mensajes del formulario de contacto. Componentes en `messages/` (SRP):
+- `MessagesSection.tsx` — orquestador: lista + modal de detalle, marca como leído al abrir
+- `MessagesList.tsx` — tabla pura: nombre, email, asunto, fecha, estado (leído/no leído), Ver
+- `MessageDetail.tsx` — `AdminModal` con nombre, email, teléfono (si existe), fecha, mensaje y link "Responder por email"
+
+### Órdenes — `ordenes/OrdenesPage.tsx`
+Gestión de pedidos recibidos. Componentes en `ordenes/` (SRP):
+- `OrdenesPage.tsx` — orquestador: skeleton + toggle lista/detalle
+- `OrdenesList.tsx` — tabla: número, comprador, municipio, total, estado badge, Ver detalle
+- `OrdenDetalle.tsx` — secciones: Comprador, Envío (con badge 🎁 si es para tercero), Productos, cambio de estado
+- `OrdenEstadoBadge.tsx` — badge coloreado: amarillo (pendiente) / azul (enviado) / verde (entregado) / rojo (cancelado)
+
+Hook: `useOrdenes.ts` — `useCollection<Orden>('ordenes')`, ordena por `creadoEn.seconds` desc client-side.
+Servicio: `ordenes.service.ts` — `crearOrden` + `actualizarEstadoOrden`.
+
 ### Configuración — `settings/Settings.tsx`
 3 tabs: General | Redes Sociales | Hero. Componentes en `settings/tabs/`:
 - `SettingsGeneral.tsx` — storeName, description, address, email, phone, logo
@@ -329,8 +353,9 @@ Exports: `auth`, `db`, `storage`.
 | `subcategories` | `name`, `description?`, `categoryId`, `categoryName`, `active`, `createdAt` |
 | `aromas` | `nombre`, `descripcion?`, `activo`, `creadoEn` |
 | `colores` | `nombre`, `codigoHex?`, `activo`, `creadoEn` |
-| `settings/general` | `storeName`, `logoUrl`, `description`, `address?`, `email`, `phone`, `social`, `heroVideoURL?`, `heroEyebrow?`, `heroTitulo?`, `heroSubtitulo?`, `updatedAt` |
-| `messages` | `name`, `email`, `subject`, `message`, `createdAt`, `read` |
+| `settings/general` | `storeName`, `logoUrl`, `description`, `address?`, `email`, `phone`, `social`, `heroVideoURL?`, `heroEyebrow?`, `heroTitulo?`, `heroSubtitulo?`, `ultimoNumeroPedido`, `updatedAt` |
+| `messages` | `name`, `email`, `phone?`, `subject`, `message`, `createdAt`, `read` |
+| `ordenes` | `numeroOrden`, `comprador`, `envio`, `items[]`, `total`, `estado`, `creadoEn` |
 
 ### Backward compat — campo `active` en products
 Productos en Firestore sin campo `active`: `where('active','==',true)` NO los devuelve → no aparecen en CatalogPage. `ProductsSection` (homepage) usa `p.active !== false` → siguen visibles. Al editar y guardar desde admin se escribe `active: true` → se integran al nuevo sistema.
@@ -349,6 +374,7 @@ match /subcategories/{id} { allow read: if true; allow write: if request.auth !=
 match /aromas/{id}        { allow read: if true; allow write: if request.auth != null; }
 match /colores/{id}       { allow read: if true; allow write: if request.auth != null; }
 match /messages/{id}      { allow read: if request.auth != null; allow write: if true; }
+match /ordenes/{id}       { allow read: if request.auth != null; allow create: if true; allow update: if request.auth != null; }
 ```
 
 ### Variables de entorno (`.env`, no se commitea)
@@ -415,6 +441,19 @@ setPersistence(auth, browserSessionPersistence)
 | `toggleColorActive(id, currentlyActive)` | `updateDoc({ activo: !currentlyActive })` |
 | `saveColor(data, id?)` | `addDoc` (nuevo) o `updateDoc` (editar) en colección `colores` |
 
+### `ordenes.service.ts`
+| Función | Descripción |
+|---------|-------------|
+| `crearOrden(form, items, total)` | Transacción: lee e incrementa `ultimoNumeroPedido` en `settings/general` → genera `PED-000001`, `PED-000002`… → `addDoc` en `ordenes` |
+| `actualizarEstadoOrden(id, estado)` | `updateDoc({ estado })` |
+
+> El número de pedido usa `runTransaction` para garantizar atomicidad (sin duplicados en pedidos simultáneos). El contador `ultimoNumeroPedido` en `settings/general` nunca retrocede aunque se borren órdenes. Para reiniciar/ajustar el contador, editar el campo directamente en Firestore.
+
+### `messages.service.ts`
+| Función | Descripción |
+|---------|-------------|
+| `marcarLeido(id)` | `updateDoc({ read: true })` |
+
 ---
 
 ## Hooks (`src/hooks/`)
@@ -428,17 +467,65 @@ setPersistence(auth, browserSessionPersistence)
 | `useAromas()` | `{ data: Aroma[], loading }` | Todos los aromas (activos e inactivos). Para panel admin. |
 | `useColores()` | `{ data: Color[], loading }` | Todos los colores (activos e inactivos). Para panel admin. |
 | `useAtributosProducto()` | `{ aromas, colores, loading }` | Solo activos (`where('activo','==',true)`). Para `ProductoAtributosSelector` en página pública. |
+| `useCart()` | `{ items, totalItems, totalPrecio, agregarItem, quitarItem, actualizarCantidad, vaciarCarrito, estaEnCarrito }` | Estado del carrito con persistencia en `localStorage` (`vsm_carrito`). Usado por `CartProvider`. |
+| `useCheckout()` | `{ form, errors, loading, setField, setDepartamento, handleSubmit }` | Estado y lógica del formulario de checkout. Valida, crea la orden y navega a `/orden-confirmada`. |
+| `useCheckoutValidacion` | función pura | `validateCheckout(form): Record<string,string>`. Sin hooks — pura validación de campos. |
+| `useColombia()` | funciones puras | `getDepartamentos()`, `getMunicipios(cod)`, `getDepartamentoNombre(cod)`, `getMunicipioNombre(cod)`. Lee `src/data/colombia.json`. |
+| `useOrdenes()` | `{ ordenes, loading, selected, setSelected }` | `useCollection<Orden>('ordenes')`, ordena por `creadoEn.seconds` desc client-side. |
 
 ---
 
-## Types (`src/types/admin.ts`)
+## Types
 
-Interfaces principales: `Product`, `Category`, `Subcategory`, `Aroma`, `Color`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `AromaFormData`, `ColorFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData`
+### `src/types/admin.ts`
+Interfaces: `Product`, `Category`, `Subcategory`, `Aroma`, `Color`, `SocialLinks`, `StoreSettings`, `ProductFormData`, `AromaFormData`, `ColorFormData`, `CategoryFormData`, `SubcategoryFormData`, `SettingsFormData`, `Message`
 
-> `Product` ya NO tiene campos de aroma/color. Aromas y colores son atributos globales de la tienda gestionados en colecciones independientes. `ProductFormData` tampoco los incluye.
+> `Product` ya NO tiene campos de aroma/color. `Message` incluye `phone?: string` (opcional, del formulario de contacto).
 
-Tipos union: `AdminSection = 'dashboard' | 'productos' | 'configuracion'`
+Tipos union: `AdminSection = 'dashboard' | 'productos' | 'ordenes' | 'configuracion' | 'mensajes'`
 `ProductsTab = 'productos' | 'categorias' | 'atributos'`
+
+### `src/types/cart.types.ts`
+- `CartItem` — `{ productoId, nombre, precio, imagen, cantidad, stock, aroma?, color?, colorHex? }`
+- `CheckoutState` — estado plano del formulario de checkout (comprador + envío directo + campos tercero)
+
+### `src/types/orden.types.ts`
+- `EstadoOrden = 'pendiente' | 'enviado' | 'entregado' | 'cancelado'`
+- `Orden`, `OrdenComprador`, `OrdenEnvio`, `OrdenItem`
+
+### `src/types/ubicacion.types.ts`
+- `Municipio`, `Departamento`, `Pais` — estructura del JSON geográfico
+
+### `src/data/colombia.json`
+- Todos los 33 departamentos con código ISO 3166-2 (`CO-MAG`…) + código DANE + municipios completos
+- Estructura: `{ pais: { codigo, nombre, departamentos: [{ codigo, codigoDane, nombre, municipios: [{ codigo, nombre }] }] } }`
+
+### `src/context/CartContext.tsx`
+`CartProvider` envuelve `<HashRouter>` completo (Menu + Layout + Footer) para que el carrito sea accesible en toda la app, incluido el badge del menú.
+`useCartContext()` lanza error si se usa fuera del provider.
+
+### Cart — `src/component/cart/`
+| Componente | Responsabilidad |
+|------------|----------------|
+| `CartPage.tsx` | Orquestador: renderiza `CartVacio` o `CartItemList` + `CartResumen` |
+| `CartItemList.tsx` | Lista de ítems — mapea a `CartItemRow` |
+| `CartItemRow.tsx` | Fila: imagen 72px + nombre/aroma/color + controles cantidad + eliminar |
+| `CartResumen.tsx` | Panel sticky: subtotal, "Contra entrega", total, botones |
+| `CartVacio.tsx` | Estado vacío con botón "Ver productos" |
+
+### Checkout — `src/component/checkout/`
+| Componente | Responsabilidad |
+|------------|----------------|
+| `CheckoutPage.tsx` | Orquestador 2 columnas. Redirige a `/carrito` si el carrito está vacío |
+| `CheckoutDatosComprador.tsx` | Campos: nombre, email, teléfono |
+| `CheckoutDatosEnvio.tsx` | Banner envío, checkbox tercero, selects departamento/municipio, dirección, barrio, indicaciones. Renderiza `CheckoutEnvioTercero` si aplica |
+| `CheckoutEnvioTercero.tsx` | Campos de envío para el destinatario tercero |
+| `CheckoutResumenOrden.tsx` | Lista readonly de ítems con imágenes, atributos y total |
+| `CheckoutBotonConfirmar.tsx` | Botón con spinner durante `loading` |
+
+### Orden confirmada — `src/component/orden-confirmada/OrdenConfirmadaPage.tsx`
+- Lee `location.state.{ numeroOrden, telefono }`. Redirige a `/` si no hay `numeroOrden`.
+- Muestra ✅, badge con número de pedido, mensaje de contacto con teléfono de la tienda.
 
 ---
 
@@ -456,10 +543,8 @@ Tipos union: `AdminSection = 'dashboard' | 'productos' | 'configuracion'`
 ---
 
 ## Pendiente (próximas sesiones)
-- Gestión de mensajes recibidos en panel admin (colección `messages`, campo `read`)
-- Conectar selección de aroma/color al carrito cuando se implemente
-- Gestión de pedidos / carrito
 - `browserSessionPersistence` para el panel admin
+- Regla Firestore para `ordenes` debe añadirse manualmente en Firebase Console (ver sección Reglas)
 
 ## Archivos que NO se modifican
 `authContext.tsx`, `ProtecterRouter.tsx`, `Footer.tsx`, `Login.tsx`
