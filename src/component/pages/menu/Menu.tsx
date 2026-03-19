@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../auth/authContext"
 import { useSettings } from '../../../hooks/useSettings'
@@ -17,6 +18,15 @@ const Menu = () => {
     const { settings, loading } = useSettings()
     const { totalItems } = useCartContext()
     const logoSrc = settings?.logoUrl || logoImg
+
+    useEffect(() => {
+        const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
+        if (link) link.href = logoSrc
+    }, [logoSrc])
+
+    useEffect(() => {
+        if (settings?.storeName) document.title = settings.storeName
+    }, [settings?.storeName])
 
     const handleLogout = async () => {
         await logout()
@@ -131,7 +141,7 @@ const Menu = () => {
                             >
                                 Ingresar
                             </NavLink>
-                            <NavLink
+                            {/* <NavLink
                                 to="/Register"
                                 style={{
                                     backgroundColor: 'var(--vsm-brand)',
@@ -146,7 +156,7 @@ const Menu = () => {
                                 className="hover:opacity-90 transition-opacity"
                             >
                                 Registro
-                            </NavLink>
+                            </NavLink> */}
                         </>
                     )}
                 </div>

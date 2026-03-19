@@ -2,7 +2,7 @@ import { HashRouter, Routes, Route } from "react-router-dom"
 import { CartProvider } from "./context/CartContext"
 import HomePage            from "./component/pages/homePage/HomePage"
 import Login               from "./component/pages/auth-pages/Login"
-import Register            from "./component/pages/register/Register"
+// import Register            from "./component/pages/register/Register"
 import Menu                from "./component/pages/menu/Menu"
 import Footer              from "./component/pages/footer/Footer"
 import Layout              from "./component/pages/layout/Layout"
@@ -31,7 +31,7 @@ function App() {
             <Route path="/checkout"        element={<CheckoutPage />} />
             <Route path="/orden-confirmada" element={<OrdenConfirmadaPage />} />
             <Route path="/Login"           element={<Login />} />
-            <Route path="/Register"        element={<Register />} />
+            {/* <Route path="/Register"        element={<Register />} /> */}
             <Route path="/Admin" element={
               <ProtecterRouter>
                 <AdminPanel />
