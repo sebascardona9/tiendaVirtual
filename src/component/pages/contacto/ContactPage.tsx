@@ -87,7 +87,7 @@ const ContactPage = () => {
         className="py-12 md:py-20 px-4 md:px-8"
       >
         <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '1.25rem' }}>
-          ✦ Velas Santa Marta
+          ✦ {settings?.storeName || 'Nuestra tienda'}
         </p>
         <blockquote style={{ color: '#fff', fontSize: 'clamp(1.25rem, 3vw, 2rem)', fontWeight: 700, lineHeight: 1.5, maxWidth: '600px', margin: '0 auto', fontStyle: 'italic' }}>
           "Cada vela cuenta una historia diferente"

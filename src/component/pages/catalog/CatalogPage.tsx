@@ -120,7 +120,9 @@ const CatalogPage = () => {
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem 1rem' }}>
       <h1 style={{ fontWeight: 800, fontSize: 'var(--vsm-font-heading-xl)', color: 'var(--vsm-black)', marginBottom: '1.75rem' }}>
-        Catálogo de Velas
+        {selectedCategoryId
+          ? (categories.find(c => c.id === selectedCategoryId)?.name ?? 'Catálogo')
+          : 'Catálogo'}
       </h1>
 
       {/* ── Category chips ── */}

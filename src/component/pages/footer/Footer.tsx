@@ -3,7 +3,7 @@ import { footerData } from './FooterLinks'
 import logoImg from '../../../assets/Images/Logo.jpeg'
 import { useSettings } from '../../../hooks/useSettings'
 
-const FALLBACK_DESCRIPTION = 'Somos una pequeña empresa artesanal nacida en Santa Marta, Colombia. Elaboramos velas a mano con cera natural e ingredientes del Caribe colombiano para crear experiencias únicas en tu hogar.'
+const FALLBACK_DESCRIPTION = 'Elaboramos velas artesanales a mano con ingredientes naturales seleccionados para crear experiencias únicas en tu hogar.'
 
 const Footer = () => {
   const { settings } = useSettings()
@@ -15,26 +15,27 @@ const Footer = () => {
             <div>
                 <div className="flex items-center gap-2 mb-4">
                     <img
-                        src={logoImg}
-                        alt="Velas Santa Marta"
+                        src={settings?.logoUrl || logoImg}
+                        alt={settings?.storeName || 'Logo'}
                         style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
                     />
-                    <div>
-                        <span style={{ fontWeight: 800, fontSize: '1rem', display: 'block', lineHeight: 1.1, color: 'var(--vsm-black)' }}>Velas</span>
-                        <span style={{ fontWeight: 600, fontSize: '0.6rem', color: 'var(--vsm-brand)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Santa Marta</span>
-                    </div>
+                    {settings?.storeName && (
+                        <span style={{ fontWeight: 800, fontSize: '1rem', display: 'block', lineHeight: 1.2, color: 'var(--vsm-black)' }}>
+                            {settings.storeName}
+                        </span>
+                    )}
                 </div>
                 {/* Social icons (placeholder text icons) */}
                 <div className="flex gap-3 mt-4">
                     {[
-                        { label: 'IG',  href: '#' },
-                        { label: 'TK',  href: '#' },
-                        { label: 'FB',  href: '#' },
-                        { label: 'YT',  href: '#' },
-                    ].map((s) => (
+                        { label: 'IG', href: settings?.social?.instagram || null },
+                        { label: 'FB', href: settings?.social?.facebook  || null },
+                    ].filter(s => s.href).map((s) => (
                         <a
                             key={s.label}
-                            href={s.href}
+                            href={s.href!}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             style={{
                                 width: '32px', height: '32px', borderRadius: '50%',
                                 backgroundColor: 'var(--vsm-brand)', color: '#fff',

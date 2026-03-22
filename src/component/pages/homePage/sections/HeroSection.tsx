@@ -124,7 +124,7 @@ const HeroCarousel = ({ raw, loading }: HeroCarouselProps) => {
 const HERO_DEFAULTS = {
   eyebrow:   '✦ Ritual de bienestar',
   titulo:    'Tu nuevo ritual diario de bienestar 🌿',
-  subtitulo: 'Velas artesanales elaboradas a mano con cera natural en Santa Marta, Colombia. Cada aroma cuenta una historia del Caribe.',
+  subtitulo: 'Velas artesanales elaboradas a mano con ingredientes naturales. Cada aroma cuenta una historia única.',
 }
 
 // ── Texto + CTA del hero ───────────────────────────────────────────────────────
