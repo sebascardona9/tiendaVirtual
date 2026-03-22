@@ -17,13 +17,14 @@ const Menu = () => {
     const navigate = useNavigate()
     const { settings, loading } = useSettings()
     const { totalItems } = useCartContext()
-    const logoSrc = settings?.logoUrl || logoImg
+    const logoSrc = loading ? null : (settings?.logoUrl || logoImg)
     const [mobileOpen, setMobileOpen] = useState(false)
 
     useEffect(() => {
+        if (loading || !settings?.logoUrl) return
         const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
-        if (link) link.href = logoSrc
-    }, [logoSrc])
+        if (link) link.href = settings.logoUrl
+    }, [loading, settings?.logoUrl])
 
     useEffect(() => {
         if (settings?.storeName) document.title = settings.storeName
@@ -44,11 +45,13 @@ const Menu = () => {
             >
                 {/* Logo */}
                 <NavLink to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <img
-                        src={logoSrc}
-                        alt="Velas Santa Marta"
-                        style={{ height: '38px', width: 'auto', objectFit: 'contain' }}
-                    />
+                    {logoSrc && (
+                        <img
+                            src={logoSrc}
+                            alt={settings?.storeName || 'Logo'}
+                            style={{ height: '38px', width: 'auto', objectFit: 'contain' }}
+                        />
+                    )}
                     {!loading && (
                         <div>
                             {settings?.storeName ? (

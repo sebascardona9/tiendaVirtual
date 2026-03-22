@@ -6,7 +6,7 @@ import { useSettings } from '../../../hooks/useSettings'
 const FALLBACK_DESCRIPTION = 'Elaboramos velas artesanales a mano con ingredientes naturales seleccionados para crear experiencias únicas en tu hogar.'
 
 const Footer = () => {
-  const { settings } = useSettings()
+  const { settings, loading } = useSettings()
   return (
     <footer style={{ backgroundColor: 'var(--vsm-white)', borderTop: '1px solid var(--vsm-gray)' }} className="py-10 md:py-14">
         <div className="max-w-7xl mx-auto px-4 md:px-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-10">
@@ -14,11 +14,13 @@ const Footer = () => {
             {/* Col 1: Logo + About + Social */}
             <div>
                 <div className="flex items-center gap-2 mb-4">
-                    <img
-                        src={settings?.logoUrl || logoImg}
-                        alt={settings?.storeName || 'Logo'}
-                        style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
-                    />
+                    {!loading && (
+                        <img
+                            src={settings?.logoUrl || logoImg}
+                            alt={settings?.storeName || 'Logo'}
+                            style={{ height: '36px', width: 'auto', objectFit: 'contain' }}
+                        />
+                    )}
                     {settings?.storeName && (
                         <span style={{ fontWeight: 800, fontSize: '1rem', display: 'block', lineHeight: 1.2, color: 'var(--vsm-black)' }}>
                             {settings.storeName}
