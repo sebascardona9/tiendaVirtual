@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
 import { useAuth } from "../../auth/authContext"
 import { useSettings } from '../../../hooks/useSettings'
@@ -18,6 +18,7 @@ const Menu = () => {
     const { settings, loading } = useSettings()
     const { totalItems } = useCartContext()
     const logoSrc = settings?.logoUrl || logoImg
+    const [mobileOpen, setMobileOpen] = useState(false)
 
     useEffect(() => {
         const link = document.querySelector<HTMLLinkElement>("link[rel~='icon']")
@@ -32,6 +33,8 @@ const Menu = () => {
         await logout()
         navigate('/Login')
     }
+
+    const closeMobile = () => setMobileOpen(false)
 
     return (
         <header style={{ position: 'fixed', top: 0, width: '100%', zIndex: 40 }}>
@@ -159,8 +162,92 @@ const Menu = () => {
                             </NavLink> */}
                         </>
                     )}
+
+                    {/* Hamburger — solo móvil */}
+                    <button
+                        className="md:hidden flex flex-col justify-center items-center gap-[5px] p-1"
+                        onClick={() => setMobileOpen(prev => !prev)}
+                        aria-label={mobileOpen ? 'Cerrar menú' : 'Abrir menú'}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                    >
+                        <span style={{
+                            display: 'block', width: '22px', height: '2px',
+                            backgroundColor: '#111',
+                            transition: 'transform 0.2s, opacity 0.2s',
+                            transform: mobileOpen ? 'translateY(7px) rotate(45deg)' : 'none',
+                        }} />
+                        <span style={{
+                            display: 'block', width: '22px', height: '2px',
+                            backgroundColor: '#111',
+                            transition: 'opacity 0.2s',
+                            opacity: mobileOpen ? 0 : 1,
+                        }} />
+                        <span style={{
+                            display: 'block', width: '22px', height: '2px',
+                            backgroundColor: '#111',
+                            transition: 'transform 0.2s, opacity 0.2s',
+                            transform: mobileOpen ? 'translateY(-7px) rotate(-45deg)' : 'none',
+                        }} />
+                    </button>
                 </div>
             </nav>
+
+            {/* Mobile drawer */}
+            {mobileOpen && (
+                <>
+                    {/* Overlay para cerrar al tocar fuera */}
+                    <div
+                        onClick={closeMobile}
+                        style={{ position: 'fixed', inset: 0, zIndex: 30 }}
+                    />
+                    <div
+                        className="md:hidden"
+                        style={{
+                            backgroundColor: 'var(--vsm-white)',
+                            borderBottom: '1px solid var(--vsm-gray)',
+                            position: 'relative',
+                            zIndex: 35,
+                            padding: '8px 0 16px',
+                        }}
+                    >
+                        <ul style={{ listStyle: 'none', margin: 0, padding: '0 24px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {navLinks.map((link) => (
+                                <li key={link.to}>
+                                    <NavLink
+                                        to={link.to}
+                                        end={link.to === '/'}
+                                        onClick={closeMobile}
+                                        style={({ isActive }) => ({
+                                            display: 'block',
+                                            padding: '12px 0',
+                                            color: isActive ? 'var(--vsm-brand)' : '#111',
+                                            fontWeight: isActive ? 700 : 600,
+                                            fontSize: '13px',
+                                            textDecoration: 'none',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            borderBottom: '1px solid var(--vsm-gray)',
+                                        })}
+                                    >
+                                        {link.text}
+                                    </NavLink>
+                                </li>
+                            ))}
+                            {user && (
+                                <li>
+                                    <NavLink
+                                        to="/Admin"
+                                        onClick={closeMobile}
+                                        style={{ display: 'block', padding: '12px 0', color: '#111', fontWeight: 600, fontSize: '13px', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                                    >
+                                        Admin
+                                    </NavLink>
+                                </li>
+                            )}
+                        </ul>
+                    </div>
+                </>
+            )}
         </header>
     )
 }
